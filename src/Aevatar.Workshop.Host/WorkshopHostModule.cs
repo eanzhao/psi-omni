@@ -37,6 +37,6 @@ public class WorkshopHostModule : AbpModule
         context.Services.AddTransient<ITaskAnalyzer, TaskAnalyzer>();
         context.Services.AddTransient<IToolExecutionService, ToolExecutionService>();
         context.Services.AddTransient<ISpecializedAgentStrategy, SpecializedAgentStrategy>();
-        context.Services.AddTransient<IKernelFunctionRegistry, KernelFunctionRegistry>();
+        context.Services.AddSingleton<IKernelFunctionRegistry, KernelFunctionRegistry>();
     }
 }
