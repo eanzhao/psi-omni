@@ -41,8 +41,8 @@ app.MapGet("/run", async (HttpContext context) =>
                 await RouterDemo.RunAsync(gAgentFactory);
                 return Results.Text("RouterDemo completed.\nYou can refresh host's log to see the event handling details.\nRefresh client's log to see the final report.");
             case 3:
-                await YourOwnDemo.RunAsync(gAgentFactory);
-                return Results.Text("YourOwnDemo completed.");
+                await PsiGAgentDemo.RunAsync(gAgentFactory);
+                return Results.Text("Psi demo completed.");
             default:
                 return Results.Text($"Unknown mode: {mode}");
         }

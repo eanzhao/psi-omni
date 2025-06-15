@@ -34,6 +34,9 @@
     <ItemGroup>
         <ProjectReference Include="..\Aevatar.Workshop.GAgent\Aevatar.Workshop.GAgent.csproj" />
         <ProjectReference Include="..\Aevatar.Workshop.AIRouterWorkflowGAgent\Aevatar.Workshop.AIRouterWorkflowGAgent.csproj" />
+        <ProjectReference Include="..\PsiAgent\PsiAgent.csproj" />
+        <ProjectReference Include="..\PsiOrleans.Analysis\PsiOrleans.Analysis.csproj" />
+        <ProjectReference Include="..\PsiOrleans.Plugins\PsiOrleans.Plugins.csproj" />
     </ItemGroup>
 
 </Project>

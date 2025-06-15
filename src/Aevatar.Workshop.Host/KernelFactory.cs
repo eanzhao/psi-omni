@@ -1,0 +1,58 @@
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.SemanticKernel;
+using PsiOrleans.Common.Interfaces;
+using PsiOrleans.Common.Models;
+using PsiOrleans.Plugins;
+
+namespace Aevatar.Workshop.Host;
+
+public class KernelFactory : IKernelFactory
+{
+    public Kernel CreateKernel(AgentConfiguration configuration, IEnumerable<string>? toolNames = null)
+    {
+        // TODO: validate configuration
+        // Create a kernel for LLM analysis (same approach as original)
+        var kernelBuilder = Kernel.CreateBuilder();
+
+        // Add chat completion service based on configuration
+        if (configuration.Model.IsAzureOpenAI)
+        {
+            kernelBuilder.AddAzureOpenAIChatCompletion(
+                configuration.Model.DeploymentName ?? configuration.Model.ModelId,
+                configuration.Model.Endpoint!,
+                configuration.Model.ApiKey);
+        }
+        else
+        {
+            kernelBuilder.AddOpenAIChatCompletion(
+                configuration.Model.ModelId,
+                configuration.Model.ApiKey);
+        }
+
+        // 动态注册并注入所需工具函数
+        var registry = new KernelFunctionRegistry(new NullLogger<KernelFunctionRegistry>());
+        MathFunctionRegistration.RegisterAllMathFunctions(registry);
+        if (toolNames != null)
+        {
+            var funcs = new List<KernelFunction>();
+            foreach (var toolName in toolNames)
+            {
+                var func = registry.GetFunction(toolName);
+                if (func != null)
+                {
+                    funcs.Add(func);
+                }
+            }
+
+            if (funcs.Count > 0)
+            {
+                var mathPlugin = KernelPluginFactory.CreateFromFunctions("Math", funcs);
+                kernelBuilder.Plugins.Add(mathPlugin);
+            }
+        }
+
+        return kernelBuilder.Build();
+    }
+
+    public IKernelFunctionRegistry? FunctionRegistry { get; }
+}

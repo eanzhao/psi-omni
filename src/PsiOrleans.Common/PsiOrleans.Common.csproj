@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>PsiOrleans.Common</PackageId>
+        <Version>1.0.0</Version>
+        <Description>Common models, interfaces, and utilities for PsiOrleans agent system</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Minimal dependencies for framework-agnostic design -->
+        <PackageReference Include="Aevatar.Core.Abstractions"/>
+        <PackageReference Include="Microsoft.Orleans.Serialization.Abstractions"/>
+        <PackageReference Include="System.Text.Json"/>
+        <PackageReference Include="Microsoft.SemanticKernel.Abstractions"/>
+    </ItemGroup>
+
+</Project> 

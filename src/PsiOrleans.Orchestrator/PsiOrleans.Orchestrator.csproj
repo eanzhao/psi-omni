@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../PsiOrleans.Common/PsiOrleans.Common.csproj" />
+        <ProjectReference Include="../PsiOrleans.Analysis/PsiOrleans.Analysis.csproj" />
+        <ProjectReference Include="../PsiOrleans.Specialized/PsiOrleans.Specialized.csproj" />
+        <ProjectReference Include="../PsiOrleans.Plugins/PsiOrleans.Plugins.csproj" />
+    </ItemGroup>
+
+</Project>
