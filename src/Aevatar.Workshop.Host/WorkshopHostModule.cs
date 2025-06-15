@@ -4,6 +4,7 @@ using Aevatar.GAgents.SemanticKernel.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using PsiOrleans.Analysis.Services;
 using PsiOrleans.Common.Interfaces;
+using PsiOrleans.Plugins;
 using PsiOrleans.Specialized.Services;
 using Serilog;
 using Volo.Abp.AspNetCore.Serilog;
@@ -36,5 +37,6 @@ public class WorkshopHostModule : AbpModule
         context.Services.AddTransient<ITaskAnalyzer, TaskAnalyzer>();
         context.Services.AddTransient<IToolExecutionService, ToolExecutionService>();
         context.Services.AddTransient<ISpecializedAgentStrategy, SpecializedAgentStrategy>();
+        context.Services.AddTransient<IKernelFunctionRegistry, KernelFunctionRegistry>();
     }
 }

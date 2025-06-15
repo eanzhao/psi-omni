@@ -6,3 +6,8 @@ namespace PsiAgent;
 public class TaskAnalysisDone : EventBase
 {
 }
+
+[GenerateSerializer]
+public class TaskSet : EventBase
+{
+}

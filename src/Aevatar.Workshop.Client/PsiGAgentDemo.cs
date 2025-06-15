@@ -9,7 +9,7 @@ public static class PsiGAgentDemo
     public static async Task RunAsync(IGAgentFactory gAgentFactory)
     {
         var psi = await gAgentFactory.GetGAgentAsync("psi", "psi");
-        var publisher = await gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
+        var publisher = await gAgentFactory.GetGAgentAsync<IPublishingGAgent>(Guid.NewGuid());
 
         await publisher.PublishEventAsync(new SendConfigEvent
         {
@@ -18,6 +18,11 @@ public static class PsiGAgentDemo
         }, psi);
         
         
+        await publisher.PublishEventAsync(new SendTaskEvent
+        {
+            CallId = Guid.NewGuid().ToString(),
+            Task = "percentage of 2 over 24"
+        }, psi);
 
         await publisher.PublishEventAsync(new PingEvent(), psi);
 

@@ -35,8 +35,10 @@ public class AgentState : StateBase
     [Id(0)] public string AgentId { get; set; } = string.Empty;
     [Id(1)] public string ParentAgentId { get; set; } = string.Empty;
     [Id(2)] public string Task { get; set; } = string.Empty;
-    [Id(3)] public AgentConfiguration? Configuration { get; set; }
-    [Id(4)] public AgentRole AgentRole { get; set; } = AgentRole.Undecided;
-    [Id(5)] public OrchestratorState Orchestrator { get; set; } = new();
-    [Id(6)] public TaskAnalysisResult TaskAnalysisResult { get; set; } = new();
+    [Id(3)] public string? SpecializedAgentId { get; set; } = string.Empty;
+    [Id(4)] public string CallId { get; set; } = string.Empty;
+    [Id(5)] public AgentConfiguration? Configuration { get; set; }
+    [Id(6)] public AgentRole AgentRole { get; set; } = AgentRole.Undecided;
+    [Id(7)] public OrchestratorState Orchestrator { get; set; } = new();
+    [Id(8)] public TaskAnalysisResult TaskAnalysisResult { get; set; } = new();
 }

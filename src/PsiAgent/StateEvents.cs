@@ -13,6 +13,13 @@ public class UpdateSendConfigEvent : AgentStateLogEvent
 }
 
 [GenerateSerializer]
+public class UpdateTaskEvent : AgentStateLogEvent
+{
+    [Id(0)] public string CallId { get; set; } = string.Empty;
+    [Id(1)] public string Task { get; set; } = string.Empty;
+}
+
+[GenerateSerializer]
 public class UpdateTaskAnalysicResultEvent : AgentStateLogEvent
 {
     [Id(0)] public TaskAnalysisResult TaskAnalysisResult { get; set; } = new();

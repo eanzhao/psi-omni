@@ -8,6 +8,11 @@ namespace Aevatar.Workshop.Host;
 
 public class KernelFactory : IKernelFactory
 {
+    public KernelFactory(IKernelFunctionRegistry kernelFunctionRegistry)
+    {
+        FunctionRegistry = kernelFunctionRegistry;
+    }
+
     public Kernel CreateKernel(AgentConfiguration configuration, IEnumerable<string>? toolNames = null)
     {
         // TODO: validate configuration
