@@ -20,7 +20,7 @@ public partial class PsiGAgent
 
     private async Task<CallbackData> CreateNewAgentAsync(SubTask subTask)
     {
-        var callId = Guid.NewGuid().ToString();
+        var callId = subTask.SubTaskId;
         var child = await _gAgentFactory.GetGAgentAsync("psi", "psi");
         await RegisterAsync(child);
         var config = new AgentConfiguration()

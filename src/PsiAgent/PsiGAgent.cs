@@ -73,6 +73,12 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
     [EventHandler]
     public async Task HandleSpecializedRunDoneEventAsync(SpecializedRunDone specializedRunDone)
     {
+        await PublishAsync(GrainId.Parse(State.ParentAgentId), new TaskCallbackEvent
+        {
+            CallId = State.CallId,
+            Task = State.Task,
+            Reply = State.SpecializedState.ChatHistory.Last()
+        });
         // TODO: maybe send callback to parent.
         Logger.LogInformation("SpecializedRunDone");
     }
@@ -101,6 +107,16 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
     }
 
     [EventHandler]
+    public async Task HandleTaskCallbackEventAsync(TaskCallbackEvent @event)
+    {
+        RaiseEvent(new ReceiveCallbackEvent
+        {
+            TaskCallbackEvent = @event
+        });
+        await ConfirmEvents();
+    }
+
+    [EventHandler]
     public async Task HandleTaskSetEventAsync(TaskSet @event)
     {
         Logger.LogInformation("TaskSetEvent: {Task}", State.Task);
@@ -119,9 +135,9 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
             case UpdateSendConfigEvent payload:
                 if (state.AgentId.IsNullOrEmpty())
                 {
-                    var agentId = $"agent-{Guid.NewGuid()}";
+                    var grainId = this.GetGrainId().ToString();
                     var config = payload.SendConfigEvent.Configuration;
-                    state.AgentId = agentId;
+                    state.AgentId = grainId;
                     state.ParentAgentId = payload.SendConfigEvent.ParenteAgentId;
                     state.Configuration = config;
                     state.AgentRole = AgentRole.Undecided;
@@ -195,6 +211,36 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                         // TODO: Assert Status is Pending
                         subTask.Status = SubTaskStatus.Delegated;
                         state.Orchestrator.PendingCallbacks[callbackData.CallId] = callbackData;
+                    }
+                }
+
+                break;
+            case ReceiveCallbackEvent payload:
+                var orchestratorState = State.Orchestrator;
+                var callback = payload.TaskCallbackEvent;
+                if (orchestratorState.PendingCallbacks.TryGetValue(callback.CallId, out var cbd))
+                {
+                    cbd.IsReceived = true;
+                    cbd.ResultMessage = callback.Reply.Content;
+                    cbd.IsSuccess = true; // TODO: Get from replay
+                    cbd.ReceivedAt = DateTime.UtcNow;
+                    orchestratorState.CompletedCallbacks.Add(new CompletedCallback
+                    {
+                        CallId = callback.CallId,
+                        ChildAgentId = cbd.ChildAgentId,
+                        Task = cbd.Task,
+                        ResultMessage = callback.Reply.Content,
+                        IsSuccess = true,
+                        CompletedAt = cbd.ReceivedAt ?? DateTime.UtcNow,
+                        ExecutionTime = (cbd.ReceivedAt ?? DateTime.UtcNow) - cbd.CreatedAt
+                    });
+                    orchestratorState.PendingCallbacks.Remove(callback.CallId);
+                    var subTask = orchestratorState.CurrentSubTasks.SingleOrDefault(st => st.Task == cbd.Task);
+                    if (subTask != null)
+                    {
+                        subTask.Status = SubTaskStatus.Completed;
+                        subTask.SubTaskId = callback.CallId;
+                        UpdateDependencyResults(orchestratorState.CurrentSubTasks, subTask, callback.Reply.Content);
                     }
                 }
 

@@ -42,3 +42,9 @@ public class UpdateSubTaskCallbackDatasEvent : AgentStateLogEvent
 {
     [Id(0)] public List<CallbackData> CallbackDatas { get; set; } = new();
 }
+
+[GenerateSerializer]
+public class ReceiveCallbackEvent : AgentStateLogEvent
+{
+    [Id(0)] public TaskCallbackEvent TaskCallbackEvent { get; set; } = new();
+}

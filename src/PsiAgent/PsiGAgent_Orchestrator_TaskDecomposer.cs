@@ -7,8 +7,6 @@ namespace PsiAgent;
 
 public partial class PsiGAgent
 {
-
-
     private async Task<List<SubTask>> DecomposeTaskAsync()
     {
         var task = State.Task;
@@ -110,6 +108,7 @@ When choosing suggestedTools for each subtask, use both the name and the descrip
         try
         {
             // Try JSON parsing first
+            var allIds = new Dictionary<string, string>();
             var jsonDoc = JsonDocument.Parse(response);
             if (jsonDoc.RootElement.TryGetProperty("subtasks", out var subtasksElement))
             {
@@ -119,12 +118,13 @@ When choosing suggestedTools for each subtask, use both the name and the descrip
                 {
                     var subTask = new SubTask
                     {
-                        SubTaskId = subtaskElement.GetProperty("id").GetString() ?? Guid.NewGuid().ToString(),
+                        SubTaskId = subtaskElement.GetProperty("id").GetString(),
                         Task = subtaskElement.GetProperty("task").GetString() ?? "",
                         SuggestedRole = AgentRole.Specialized,
                         Priority = 1,
                         Status = SubTaskStatus.Pending
                     };
+                    allIds.TryAdd(subTask.SubTaskId, Guid.NewGuid().ToString());
 
                     // Parse suggested tools
                     if (subtaskElement.TryGetProperty("suggestedTools", out var toolsElement))
@@ -153,6 +153,13 @@ When choosing suggestedTools for each subtask, use both the name and the descrip
                     }
 
                     subTasks.Add(subTask);
+                }
+
+                foreach (var subTask in subTasks)
+                {
+                    subTask.SubTaskId = allIds[subTask.SubTaskId];
+                    var newDepIds = subTask.Dependencies.Select(x => allIds[x]).ToList();
+                    subTask.Dependencies = newDepIds;
                 }
 
                 return subTasks;
