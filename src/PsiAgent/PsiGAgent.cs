@@ -80,6 +80,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
 
         await PublishAsync(GrainId.Parse(State.ParentAgentId), new TaskCallbackEvent
         {
+            TargetAgentId = State.ParentAgentId,
             CallId = State.CallId,
             Task = State.Task,
             Reply = State.SpecializedState.ChatHistory.Last()
@@ -99,6 +100,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
 
         await PublishAsync(GrainId.Parse(State.ParentAgentId), new TaskCallbackEvent
         {
+            TargetAgentId = State.ParentAgentId,
             CallId = State.CallId,
             Task = State.Task,
             Reply = ChatMessage.CreateAssistantMessage(orchestratorRunDone.Reply)
@@ -133,6 +135,12 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
     [EventHandler]
     public async Task HandleTaskCallbackEventAsync(TaskCallbackEvent @event)
     {
+        if (@event.TargetAgentId != this.GetGrainId().ToString())
+        {
+            // Not for me
+            return;
+        }
+        
         RaiseEvent(new ReceiveCallbackEvent
         {
             TaskCallbackEvent = @event

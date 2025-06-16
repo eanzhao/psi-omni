@@ -28,7 +28,8 @@ public class SendTaskEvent : EventBase
 [GenerateSerializer]
 public class TaskCallbackEvent : EventBase
 {
-    [Id(0)] public string CallId { get; set; }
-    [Id(1)] public string Task { get; set; }
-    [Id(2)] public ChatMessage Reply { get; set; }
+    [Id(0)] public string TargetAgentId { get; set; }
+    [Id(1)] public string CallId { get; set; }
+    [Id(2)] public string Task { get; set; }
+    [Id(3)] public ChatMessage Reply { get; set; }
 }

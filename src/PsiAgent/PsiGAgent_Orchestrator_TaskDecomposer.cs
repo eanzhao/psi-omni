@@ -80,6 +80,9 @@ Respond in this exact JSON format:
     ],
     ""overallStrategy"": ""Brief explanation of the delegation strategy and dependency flow""
 }}
+
+Make sure the json string is clean without comments.
+
 When choosing suggestedTools for each subtask, use both the name and the description to decide which are most relevant.";
 
             var result = await chatService.GetChatMessageContentAsync(delegationPrompt);

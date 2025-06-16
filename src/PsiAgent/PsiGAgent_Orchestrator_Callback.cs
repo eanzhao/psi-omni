@@ -54,6 +54,7 @@ public partial class PsiGAgent
             var completedSubTasks = currentSubTasks.Count(st => st.Status == SubTaskStatus.Completed);
             var failedSubTasks = currentSubTasks.Count(st => st.Status == SubTaskStatus.Failed);
             var pendingSubTasks = currentSubTasks.Count(st => st.Status == SubTaskStatus.Delegated);
+            var notStartedSubTasks = currentSubTasks.Count(st => st.Status == SubTaskStatus.Pending);
 
             var completedResults = completedCallbacks
                 .Where(cb => cb.IsSuccess)
@@ -83,6 +84,7 @@ Progress Status:
 - Completed successfully: {completedSubTasks}
 - Failed total: {failedSubTasks} (timeouts: {timeoutFailures}, other errors: {otherFailures})
 - Still pending: {pendingSubTasks}
+- Not started: {notStartedSubTasks}
 
 Completed Results:
 {string.Join("\n\n", completedResults)}
@@ -102,7 +104,10 @@ Based on this progress, determine the next action:
 3. CREATE_ADDITIONAL - If you need to create additional or retry subtasks to fill gaps
 4. RETRY_TIMEOUTS - If timeout failures should be retried with simpler subtasks
 
-Respond with exactly one word: COMPLETE, WAIT, CREATE_ADDITIONAL, or RETRY_TIMEOUTS";
+Respond with exactly one word: COMPLETE, WAIT, CREATE_ADDITIONAL, or RETRY_TIMEOUTS
+
+IMPORTANT: We cannot complete the task if there are still subtasks not started.
+";
 
             var result = await chatService.GetChatMessageContentAsync(analysisPrompt);
             var decision = result.Content?.Trim().ToUpperInvariant();

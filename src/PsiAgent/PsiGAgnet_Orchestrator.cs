@@ -57,7 +57,7 @@ public partial class PsiGAgent
     /// </summary>
     private async Task<string> PrepareTaskWithDependencyContextAsync(SubTask subTask)
     {
-        if (subTask.Dependencies.Count == 0 || subTask.DependencyResults.Count == 0)
+        if (subTask.DependencyResults.Count == 0)
         {
             return subTask.Task;
         }
