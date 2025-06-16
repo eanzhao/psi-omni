@@ -1,6 +1,7 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel.ChatCompletion;
 using PsiOrleans.Common.Interfaces;
 using PsiOrleans.Common.Models;
 using PsiOrleans.Specialized.Services;
@@ -41,6 +42,27 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
     public async Task HandleTaskAnalysisDoneEventAsync(TaskAnalysisDone @event)
     {
         Logger.LogInformation("Task Analysis Done");
+        if (State.TaskAnalysisResult.RecommendedApproach == TaskApproach.DirectExecution)
+        {
+            var chatHistory = await ExecuteSpecializedAsync();
+            if (chatHistory != null)
+            {
+                var serializable = chatHistory.Select(m => new ChatMessage(m.Role.ToString(), m.Content))
+                    .ToList();
+                RaiseEvent(new UpdateSpecializedRunResultEvent
+                {
+                    ChatHistory = serializable
+                });
+                await ConfirmEvents();
+            }
+        }
+    }
+
+    [EventHandler]
+    public async Task HandleSpecializedRunDoneEventAsync(SpecializedRunDone specializedRunDone)
+    {
+        // TODO: maybe send callback to parent.
+        Logger.LogInformation("SpecializedRunDone");
     }
 
     [EventHandler]
@@ -115,7 +137,19 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     DoAsync(async () =>
                     {
                         var grainId = this.GetGrainId();
-                        await HandleTaskAnalysisDoneEventAsync( new TaskAnalysisDone());
+                        await HandleTaskAnalysisDoneEventAsync(new TaskAnalysisDone());
+                    });
+                }
+
+                break;
+            case UpdateSpecializedRunResultEvent payload:
+                if (state.SpecializedState.ChatHistory.IsNullOrEmpty())
+                {
+                    state.SpecializedState.ChatHistory.AddRange(payload.ChatHistory);
+                    DoAsync(async () =>
+                    {
+                        var grainId = this.GetGrainId();
+                        await HandleSpecializedRunDoneEventAsync(new SpecializedRunDone());
                     });
                 }
 

@@ -7,18 +7,18 @@ namespace PsiAgent;
 
 public partial class PsiGAgent
 {
-    private async Task ExecuteSpecializedAsync()
+    private async Task<ChatHistory?> ExecuteSpecializedAsync()
     {
         if (string.IsNullOrEmpty(State.Task))
         {
             // Do nothing
-            return;
+            return null;
         }
 
         if (State.Configuration == null)
         {
             // Do nothing
-            return;
+            return null;
         }
 
         var kernel = _kernelFactory.CreateKernel(
@@ -51,6 +51,8 @@ public partial class PsiGAgent
                            "\n\nREQUIREMENT: Use the available tool functions. When you are done, summarize the result but do no more tool calls.";
         chatHistory.AddUserMessage(enhancedTask);
         var result = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel);
+        chatHistory.Add(result);
         Logger.LogInformation($"result: {result}");
+        return chatHistory;
     }
 }

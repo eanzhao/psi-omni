@@ -24,3 +24,9 @@ public class UpdateTaskAnalysicResultEvent : AgentStateLogEvent
 {
     [Id(0)] public TaskAnalysisResult TaskAnalysisResult { get; set; } = new();
 }
+
+[GenerateSerializer]
+public class UpdateSpecializedRunResultEvent : AgentStateLogEvent
+{
+    [Id(0)] public List<ChatMessage> ChatHistory { get; set; } = new();
+}

@@ -24,7 +24,7 @@ public class SpecializedState
     /// <summary>
     /// Chat history for this agent
     /// </summary>
-    [Id(3)]
+    [Id(0)]
     public List<ChatMessage> ChatHistory { get; set; } = new();
 }
 
@@ -41,4 +41,5 @@ public class AgentState : StateBase
     [Id(6)] public AgentRole AgentRole { get; set; } = AgentRole.Undecided;
     [Id(7)] public OrchestratorState Orchestrator { get; set; } = new();
     [Id(8)] public TaskAnalysisResult TaskAnalysisResult { get; set; } = new();
+    [Id(9)] public SpecializedState? SpecializedState { get; set; } = new();
 }

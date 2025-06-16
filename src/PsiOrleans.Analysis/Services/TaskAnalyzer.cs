@@ -84,7 +84,7 @@ public class TaskAnalyzer : ITaskAnalyzer
             List<string> recommendedTools = new();
             try
             {
-                var json = System.Text.Json.JsonDocument.Parse(response);
+                var json = System.Text.Json.JsonDocument.Parse(StripMarkdownJsonBlock(response));
                 if (json.RootElement.TryGetProperty("role", out var roleProp))
                     role = roleProp.GetString()?.ToUpperInvariant() ?? "SPECIALIZED";
                 if (json.RootElement.TryGetProperty("recommended_tools", out var toolsProp) && toolsProp.ValueKind == System.Text.Json.JsonValueKind.Array)
@@ -114,5 +114,15 @@ public class TaskAnalyzer : ITaskAnalyzer
         }
     }
 
-
+    private static string StripMarkdownJsonBlock(string input)
+    {
+        var s = input.Trim();
+        if (s.StartsWith("```json"))
+            s = s.Substring(7).TrimStart();
+        else if (s.StartsWith("```"))
+            s = s.Substring(3).TrimStart();
+        if (s.EndsWith("```"))
+            s = s.Substring(0, s.Length - 3).TrimEnd();
+        return s;
+    }
 } 

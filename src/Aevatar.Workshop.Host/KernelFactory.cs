@@ -34,15 +34,13 @@ public class KernelFactory : IKernelFactory
                 configuration.Model.ApiKey);
         }
 
-        // 动态注册并注入所需工具函数
-        var registry = new KernelFunctionRegistry(new NullLogger<KernelFunctionRegistry>());
-        MathFunctionRegistration.RegisterAllMathFunctions(registry);
+
         if (toolNames != null)
         {
             var funcs = new List<KernelFunction>();
             foreach (var toolName in toolNames)
             {
-                var func = registry.GetFunction(toolName);
+                var func = FunctionRegistry.GetFunction(toolName);
                 if (func != null)
                 {
                     funcs.Add(func);
