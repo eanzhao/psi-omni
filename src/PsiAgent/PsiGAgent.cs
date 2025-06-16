@@ -73,11 +73,35 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
     [EventHandler]
     public async Task HandleSpecializedRunDoneEventAsync(SpecializedRunDone specializedRunDone)
     {
+        if (State.ParentAgentId.IsNullOrEmpty())
+        {
+            return;
+        }
+
         await PublishAsync(GrainId.Parse(State.ParentAgentId), new TaskCallbackEvent
         {
             CallId = State.CallId,
             Task = State.Task,
             Reply = State.SpecializedState.ChatHistory.Last()
+        });
+        // TODO: maybe send callback to parent.
+        Logger.LogInformation("SpecializedRunDone");
+    }
+
+    [EventHandler]
+    public async Task HandleOrchestratorRunDoneEventAsync(OrchestratorRunDone orchestratorRunDone)
+    {
+        if (State.ParentAgentId.IsNullOrEmpty())
+        {
+            Logger.LogInformation("Result for task:\n\nTask: {Task}\n\nResult: {Result}", State.Task, orchestratorRunDone.Reply);
+            return;
+        }
+
+        await PublishAsync(GrainId.Parse(State.ParentAgentId), new TaskCallbackEvent
+        {
+            CallId = State.CallId,
+            Task = State.Task,
+            Reply = ChatMessage.CreateAssistantMessage(orchestratorRunDone.Reply)
         });
         // TODO: maybe send callback to parent.
         Logger.LogInformation("SpecializedRunDone");
@@ -243,6 +267,27 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                         UpdateDependencyResults(orchestratorState.CurrentSubTasks, subTask, callback.Reply.Content);
                     }
                 }
+
+                DoAsync(async () =>
+                {
+                    var decision = await AnalyzeProgressAsync();
+                    if (decision == OrchestrationDecision.CompleteTask)
+                    {
+                        var result = await AggregateResultsAsync();
+                        await HandleOrchestratorRunDoneEventAsync(new OrchestratorRunDone()
+                        {
+                            Reply = result
+                        });
+                    }
+                    else if (decision == OrchestrationDecision.CreateAdditionalTasks)
+                    {
+                        var callbackDatas = await DelegateStartableSubTasksAsync();
+                        RaiseEvent(new UpdateSubTaskCallbackDatasEvent
+                        {
+                            CallbackDatas = callbackDatas
+                        });
+                    }
+                });
 
                 break;
         }
