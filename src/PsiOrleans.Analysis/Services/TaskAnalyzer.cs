@@ -80,8 +80,8 @@ public class TaskAnalyzer : ITaskAnalyzer
             var response = result.Content?.Trim() ?? "{\"role\":\"SPECIALIZED\",\"recommended_tools\":[]}";
 
             // 解析 JSON 响应
-            string role = "SPECIALIZED";
-            List<string> recommendedTools = new();
+            var role = "SPECIALIZED";
+            var recommendedTools = new List<string>();
             try
             {
                 var json = System.Text.Json.JsonDocument.Parse(StripMarkdownJsonBlock(response));

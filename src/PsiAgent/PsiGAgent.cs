@@ -229,7 +229,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                 foreach (var callbackData in payload.CallbackDatas)
                 {
                     var subTask =
-                        state.Orchestrator.CurrentSubTasks.SingleOrDefault(st => st.Task == callbackData.Task);
+                        state.Orchestrator.CurrentSubTasks.SingleOrDefault(st => st.SubTaskId == callbackData.CallId);
                     if (subTask != null)
                     {
                         // TODO: Assert Status is Pending
@@ -259,7 +259,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                         ExecutionTime = (cbd.ReceivedAt ?? DateTime.UtcNow) - cbd.CreatedAt
                     });
                     orchestratorState.PendingCallbacks.Remove(callback.CallId);
-                    var subTask = orchestratorState.CurrentSubTasks.SingleOrDefault(st => st.Task == cbd.Task);
+                    var subTask = orchestratorState.CurrentSubTasks.SingleOrDefault(st => st.SubTaskId == cbd.CallId);
                     if (subTask != null)
                     {
                         subTask.Status = SubTaskStatus.Completed;

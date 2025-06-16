@@ -33,11 +33,10 @@ public partial class PsiGAgent
 
 
         // 2. 构造 PromptExecutionSettings
-        PromptExecutionSettings executionSettings;
         var maxTokens = 4000; // 默认最大 token
         var temperature = 0.1; // 默认温度
         // 只用 OpenAI 版本（无 config.Model 判断）
-        executionSettings = new OpenAIPromptExecutionSettings
+        var executionSettings = new OpenAIPromptExecutionSettings
         {
             ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
             MaxTokens = maxTokens,
