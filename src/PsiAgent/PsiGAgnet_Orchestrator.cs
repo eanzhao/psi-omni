@@ -70,13 +70,13 @@ public partial class PsiGAgent
 
             // Gather dependency results
             var dependencyInfo = new StringBuilder();
-            foreach (var dependency in subTask.Dependencies)
+            // TODO: Flatten dependency tree
+            foreach (var subTaskDependencyResult in subTask.DependencyResults)
             {
-                if (subTask.DependencyResults.TryGetValue(dependency, out var result))
-                {
-                    dependencyInfo.AppendLine($"Dependency {dependency} Result: {result}");
-                    dependencyInfo.AppendLine();
-                }
+                var dep = subTaskDependencyResult.Key;
+                var res = subTaskDependencyResult.Value;
+                dependencyInfo.AppendLine($"Dependency {dep} Result: {res}");
+                dependencyInfo.AppendLine();
             }
 
             var contextPrompt = $@"
@@ -106,6 +106,7 @@ Reframed task description:";
 
             Logger.LogInformation("LLM reframed subtask {SubTaskId}: Original='{Original}', Reframed='{Reframed}'",
                 subTask.SubTaskId, subTask.Task, reframedTask);
+            subTask.ReframedTask = reframedTask;
 
             return reframedTask;
         }

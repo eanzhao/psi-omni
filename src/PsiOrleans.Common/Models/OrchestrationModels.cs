@@ -30,6 +30,7 @@ public class SubTask
     [Id(7)] public List<string> Dependencies { get; set; } = new();
     [Id(8)] public Dictionary<string, string> DependencyResults { get; set; } = new();
     [Id(9)] public bool CanStart { get; set; } = true;
+    [Id(10)] public string ReframedTask { get; set; } = string.Empty;
     
     public override string ToString()
     {
