@@ -30,3 +30,15 @@ public class UpdateSpecializedRunResultEvent : AgentStateLogEvent
 {
     [Id(0)] public List<ChatMessage> ChatHistory { get; set; } = new();
 }
+
+[GenerateSerializer]
+public class UpdateSubTasksEvent : AgentStateLogEvent
+{
+    [Id(0)] public List<SubTask> SubTasks { get; set; } = new();
+}
+
+[GenerateSerializer]
+public class UpdateSubTaskCallbackDatasEvent : AgentStateLogEvent
+{
+    [Id(0)] public List<CallbackData> CallbackDatas { get; set; } = new();
+}

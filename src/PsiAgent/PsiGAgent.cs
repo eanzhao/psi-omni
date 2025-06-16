@@ -14,17 +14,17 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
 {
     private readonly IKernelFactory _kernelFactory;
     private readonly ITaskAnalyzer _taskAnalyzer;
-    private readonly ISpecializedAgentStrategy _specializedAgentStrategy;
+    private readonly IGAgentFactory _gAgentFactory;
 
     public PsiGAgent(
         IKernelFactory kernelFactory,
         ITaskAnalyzer taskAnalyzer,
-        ISpecializedAgentStrategy specializedAgentStrategy
+        IGAgentFactory gAgentFactory
     )
     {
         _kernelFactory = kernelFactory;
         _taskAnalyzer = taskAnalyzer;
-        _specializedAgentStrategy = specializedAgentStrategy;
+        _gAgentFactory = gAgentFactory;
     }
 
     public override Task<string> GetDescriptionAsync()
@@ -52,6 +52,18 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                 RaiseEvent(new UpdateSpecializedRunResultEvent
                 {
                     ChatHistory = serializable
+                });
+                await ConfirmEvents();
+            }
+        }
+        else if (State.TaskAnalysisResult.RecommendedApproach == TaskApproach.Orchestration)
+        {
+            var subtasks = await DecomposeTaskAsync();
+            if (!subtasks.IsNullOrEmpty())
+            {
+                RaiseEvent(new UpdateSubTasksEvent
+                {
+                    SubTasks = subtasks
                 });
                 await ConfirmEvents();
             }
@@ -151,6 +163,39 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                         var grainId = this.GetGrainId();
                         await HandleSpecializedRunDoneEventAsync(new SpecializedRunDone());
                     });
+                }
+
+                break;
+            case UpdateSubTasksEvent payload:
+                if (state.Orchestrator.CurrentSubTasks.IsNullOrEmpty())
+                {
+                    state.Orchestrator.CurrentSubTasks.AddRange(payload.SubTasks);
+                    state.Orchestrator.ExecutionPlan = string.Join("\n", payload.SubTasks.Select(st => $"- {st.Task}"));
+                    state.Orchestrator.CreatedAt = DateTime.UtcNow;
+                    state.Orchestrator.LastUpdated = DateTime.UtcNow;
+
+                    DoAsync(async () =>
+                    {
+                        var callbackDatas = await DelegateStartableSubTasksAsync();
+                        RaiseEvent(new UpdateSubTaskCallbackDatasEvent
+                        {
+                            CallbackDatas = callbackDatas
+                        });
+                    });
+                }
+
+                break;
+            case UpdateSubTaskCallbackDatasEvent payload:
+                foreach (var callbackData in payload.CallbackDatas)
+                {
+                    var subTask =
+                        state.Orchestrator.CurrentSubTasks.SingleOrDefault(st => st.Task == callbackData.Task);
+                    if (subTask != null)
+                    {
+                        // TODO: Assert Status is Pending
+                        subTask.Status = SubTaskStatus.Delegated;
+                        state.Orchestrator.PendingCallbacks[callbackData.CallId] = callbackData;
+                    }
                 }
 
                 break;

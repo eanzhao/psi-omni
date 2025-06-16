@@ -17,13 +17,18 @@ public static class PsiGAgentDemo
             ParenteAgentId = String.Empty
         }, psi);
         
-        
+        // await publisher.PublishEventAsync(new SendTaskEvent
+        // {
+        //     CallId = Guid.NewGuid().ToString(),
+        //     Task = "percentage of 2 over 24"
+        // }, psi);
+
         await publisher.PublishEventAsync(new SendTaskEvent
         {
             CallId = Guid.NewGuid().ToString(),
-            Task = "percentage of 2 over 24"
+            Task = "Find US and New York state GDP in 2024. Calculate what percentage of US GDP was New York state."
         }, psi);
-
+        
         await publisher.PublishEventAsync(new PingEvent(), psi);
 
 
