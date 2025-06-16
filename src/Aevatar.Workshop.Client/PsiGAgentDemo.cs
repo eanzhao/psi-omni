@@ -26,8 +26,9 @@ public static class PsiGAgentDemo
         await publisher.PublishEventAsync(new SendTaskEvent
         {
             CallId = Guid.NewGuid().ToString(),
-            Task = "Find US and New York state GDP in 2024. Calculate what percentage of US GDP was New York state."
+            Task = "Calculate what percentage of US GDP was not contributed by New York state in 2024. After getting an output, validate the answer to make sure it is accurate."
         }, psi);
+        //"Calculate the sum of these numbers: 32498, 9238, 3298437, 8328, 8329, 9238, 2321423, 34532, 3142, 342"
         
         await publisher.PublishEventAsync(new PingEvent(), psi);
 
