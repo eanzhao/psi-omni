@@ -50,73 +50,6 @@ public class KernelFunctionRegistry : IKernelFunctionRegistry
         }
     }
 
-    public KernelFunction? GetFunction(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            return null;
-        return _functions.TryGetValue(name, out var function) ? function : null;
-    }
-
-    public KernelPlugin? GetPlugin(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            return null;
-        return _plugins.TryGetValue(name, out var plugin) ? plugin : null;
-    }
-
-    public IEnumerable<KernelFunction> GetFunctions(IEnumerable<string> names)
-    {
-        if (names == null)
-            return Enumerable.Empty<KernelFunction>();
-        var functions = new List<KernelFunction>();
-        var notFound = new List<string>();
-        foreach (var name in names.Where(n => !string.IsNullOrWhiteSpace(n)))
-        {
-            if (_functions.TryGetValue(name, out var function))
-            {
-                functions.Add(function);
-            }
-            else
-            {
-                notFound.Add(name);
-            }
-        }
-        if (notFound.Any())
-        {
-            _logger.LogWarning("Functions not found: {NotFoundFunctions}", string.Join(", ", notFound));
-        }
-        _logger.LogInformation("Retrieved {FoundCount} of {RequestedCount} functions", functions.Count, names.Count());
-        return functions;
-    }
-
-    public IEnumerable<KernelPlugin> GetPlugins(IEnumerable<string> names)
-    {
-        if (names == null)
-            return Enumerable.Empty<KernelPlugin>();
-        var plugins = new List<KernelPlugin>();
-        var notFound = new List<string>();
-        foreach (var name in names.Where(n => !string.IsNullOrWhiteSpace(n)))
-        {
-            if (_plugins.TryGetValue(name, out var plugin))
-            {
-                plugins.Add(plugin);
-            }
-            else
-            {
-                notFound.Add(name);
-            }
-        }
-        if (notFound.Any())
-        {
-            _logger.LogWarning("Plugins not found: {NotFoundPlugins}", string.Join(", ", notFound));
-        }
-        _logger.LogInformation("Retrieved {FoundCount} of {RequestedCount} plugins", plugins.Count, names.Count());
-        return plugins;
-    }
-
-    public IEnumerable<string> GetAvailableFunctionNames() => _functions.Keys.ToList();
-    public IEnumerable<string> GetAvailablePluginNames() => _plugins.Keys.ToList();
-
     public KernelFunction? GetToolByQualifiedName(string qualifiedName)
     {
         if (string.IsNullOrWhiteSpace(qualifiedName))
@@ -138,55 +71,7 @@ public class KernelFunctionRegistry : IKernelFunctionRegistry
         return null;
     }
 
-    public IEnumerable<string> GetAllFunctionNames()
-    {
-        // Directly registered
-        foreach (var fn in _functions.Keys)
-            yield return fn;
-        // Plugin-contained
-        foreach (var plugin in _plugins.Values)
-        {
-            foreach (var function in plugin)
-                yield return $"{plugin.Name}.{function.Name}";
-        }
-    }
-
-    public Dictionary<string, KernelFunction> GetToolsByQualifiedNames(IEnumerable<string> qualifiedNames)
-    {
-        var result = new Dictionary<string, KernelFunction>();
-        var notFound = new List<string>();
-        if (qualifiedNames == null)
-            return result;
-        foreach (var qualifiedName in qualifiedNames.Where(n => !string.IsNullOrWhiteSpace(n)))
-        {
-            // Try direct
-            if (_functions.TryGetValue(qualifiedName, out var directFunc))
-            {
-                result[qualifiedName] = directFunc;
-                continue;
-            }
-            // Try plugin
-            var parts = qualifiedName.Split('.', 2, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 2)
-            {
-                var pluginName = parts[0];
-                var functionName = parts[1];
-                if (_plugins.TryGetValue(pluginName, out var plugin) &&
-                    plugin.TryGetFunction(functionName, out var pluginFunc))
-                {
-                    result[qualifiedName] = pluginFunc;
-                    continue;
-                }
-            }
-            notFound.Add(qualifiedName);
-        }
-        if (notFound.Any())
-            _logger.LogWarning("Tools not found: {NotFoundTools}", string.Join(", ", notFound));
-        _logger.LogInformation("Retrieved {FoundCount} of {RequestedCount} tools", result.Count, qualifiedNames.Count());
-        return result;
-    }
-
-    public IEnumerable<string> GetAllAvailableToolNames()
+    public List<string> GetAllAvailableToolNames()
     {
         var toolNames = new List<string>();
         toolNames.AddRange(_functions.Keys);
