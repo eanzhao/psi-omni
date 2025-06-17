@@ -49,7 +49,7 @@ public class KernelFactory : IKernelFactory
 
             if (funcs.Count > 0)
             {
-                var mathPlugin = KernelPluginFactory.CreateFromFunctions("Math", funcs);
+                var mathPlugin = KernelPluginFactory.CreateFromFunctions("Tools", funcs);
                 kernelBuilder.Plugins.Add(mathPlugin);
             }
         }
