@@ -13,17 +13,14 @@ namespace PsiAgent;
 public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
 {
     private readonly IKernelFactory _kernelFactory;
-    private readonly ITaskAnalyzer _taskAnalyzer;
     private readonly IGAgentFactory _gAgentFactory;
 
     public PsiGAgent(
         IKernelFactory kernelFactory,
-        ITaskAnalyzer taskAnalyzer,
         IGAgentFactory gAgentFactory
     )
     {
         _kernelFactory = kernelFactory;
-        _taskAnalyzer = taskAnalyzer;
         _gAgentFactory = gAgentFactory;
     }
 
@@ -172,7 +169,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     state.CallId = payload.CallId;
                     DoAsync(async () =>
                     {
-                        var analysisResult = await _taskAnalyzer.AnalyzeTaskAsync(State);
+                        var analysisResult = await AnalyzeTaskAsync(State);
                         RaiseEvent(new UpdateTaskAnalysicResultEvent
                         {
                             TaskAnalysisResult = analysisResult

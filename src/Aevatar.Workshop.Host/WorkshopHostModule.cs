@@ -34,9 +34,6 @@ public class WorkshopHostModule : AbpModule
         context.Services.Configure<SystemLLMConfigOptions>(configuration);
         context.Services.AddSemanticKernel();
         context.Services.AddSingleton<IKernelFactory, KernelFactory>();
-        context.Services.AddTransient<ITaskAnalyzer, TaskAnalyzer>();
-        context.Services.AddTransient<IToolExecutionService, ToolExecutionService>();
-        context.Services.AddTransient<ISpecializedAgentStrategy, SpecializedAgentStrategy>();
         context.Services.AddSingleton<IKernelFunctionRegistry, KernelFunctionRegistry>();
     }
 }
