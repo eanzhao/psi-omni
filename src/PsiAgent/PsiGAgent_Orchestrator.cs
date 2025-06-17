@@ -75,7 +75,15 @@ public partial class PsiGAgent
             {
                 var dep = subTaskDependencyResult.Key;
                 var res = subTaskDependencyResult.Value;
-                dependencyInfo.AppendLine($"Dependency {dep} Result: {res}");
+                var depTask = State.Orchestrator.CurrentSubTasks.SingleOrDefault(st => st.SubTaskId == dep);
+                var depTaskDesc = "";
+                if (depTask != null)
+                {
+                    depTaskDesc = depTask.ReframedTask.IsNullOrEmpty() ? depTask.Task : depTask.ReframedTask;
+                }
+
+                dependencyInfo.AppendLine(
+                    $"<dependency><id>{dep}</id><task>{depTaskDesc}</task><result>{res}</result></dependency>");
                 dependencyInfo.AppendLine();
             }
 

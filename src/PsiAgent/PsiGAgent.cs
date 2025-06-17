@@ -35,78 +35,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
     [EventHandler]
     public async Task HandlePingEventAsync(PingEvent @event)
     {
-        Logger.LogInformation("Pingevent");
-    }
-
-    [EventHandler]
-    public async Task HandleTaskAnalysisDoneEventAsync(TaskAnalysisDone @event)
-    {
-        Logger.LogInformation("Task Analysis Done");
-        if (State.TaskAnalysisResult.RecommendedApproach == TaskApproach.DirectExecution)
-        {
-            var chatHistory = await ExecuteSpecializedAsync();
-            if (chatHistory != null)
-            {
-                var serializable = chatHistory.Select(m => new ChatMessage(m.Role.ToString(), m.Content))
-                    .ToList();
-                RaiseEvent(new UpdateSpecializedRunResultEvent
-                {
-                    ChatHistory = serializable
-                });
-                await ConfirmEvents();
-            }
-        }
-        else if (State.TaskAnalysisResult.RecommendedApproach == TaskApproach.Orchestration)
-        {
-            var subtasks = await DecomposeTaskAsync();
-            if (!subtasks.IsNullOrEmpty())
-            {
-                RaiseEvent(new UpdateSubTasksEvent
-                {
-                    SubTasks = subtasks
-                });
-                await ConfirmEvents();
-            }
-        }
-    }
-
-    [EventHandler]
-    public async Task HandleSpecializedRunDoneEventAsync(SpecializedRunDone specializedRunDone)
-    {
-        if (State.ParentAgentId.IsNullOrEmpty())
-        {
-            return;
-        }
-
-        await PublishAsync(GrainId.Parse(State.ParentAgentId), new TaskCallbackEvent
-        {
-            TargetAgentId = State.ParentAgentId,
-            CallId = State.CallId,
-            Task = State.Task,
-            Reply = State.SpecializedState.ChatHistory.Last()
-        });
-        // TODO: maybe send callback to parent.
-        Logger.LogInformation("SpecializedRunDone");
-    }
-
-    [EventHandler]
-    public async Task HandleOrchestratorRunDoneEventAsync(OrchestratorRunDone orchestratorRunDone)
-    {
-        if (State.ParentAgentId.IsNullOrEmpty())
-        {
-            Logger.LogInformation("Result for task:\n\nTask: {Task}\n\nResult: {Result}", State.Task, orchestratorRunDone.Reply);
-            return;
-        }
-
-        await PublishAsync(GrainId.Parse(State.ParentAgentId), new TaskCallbackEvent
-        {
-            TargetAgentId = State.ParentAgentId,
-            CallId = State.CallId,
-            Task = State.Task,
-            Reply = ChatMessage.CreateAssistantMessage(orchestratorRunDone.Reply)
-        });
-        // TODO: maybe send callback to parent.
-        Logger.LogInformation("SpecializedRunDone");
+        Logger.LogInformation($"{this.GetGrainId()} Pingevent");
     }
 
     [EventHandler]
@@ -140,7 +69,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
             // Not for me
             return;
         }
-        
+
         RaiseEvent(new ReceiveCallbackEvent
         {
             TaskCallbackEvent = @event
@@ -148,16 +77,75 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
         await ConfirmEvents();
     }
 
-    [EventHandler]
-    public async Task HandleTaskSetEventAsync(TaskSet @event)
+    private async Task StartSpecializedExecutionAsync()
     {
-        Logger.LogInformation("TaskSetEvent: {Task}", State.Task);
-        var analysisResult = await _taskAnalyzer.AnalyzeTaskAsync(State);
-        RaiseEvent(new UpdateTaskAnalysicResultEvent
+        if (State.TaskAnalysisResult.RecommendedApproach == TaskApproach.DirectExecution)
         {
-            TaskAnalysisResult = analysisResult
+            var chatHistory = await ExecuteSpecializedAsync();
+            if (chatHistory != null)
+            {
+                var serializable = chatHistory.Select(m => new ChatMessage(m.Role.ToString(), m.Content))
+                    .ToList();
+                RaiseEvent(new UpdateSpecializedRunResultEvent
+                {
+                    ChatHistory = serializable
+                });
+                await ConfirmEvents();
+            }
+        }
+    }
+
+    private async Task StartOrchestratorExecutionAsync()
+    {
+        if (State.TaskAnalysisResult.RecommendedApproach == TaskApproach.Orchestration)
+        {
+            var subtasks = await DecomposeTaskAsync();
+            if (!subtasks.IsNullOrEmpty())
+            {
+                RaiseEvent(new UpdateSubTasksEvent
+                {
+                    SubTasks = subtasks
+                });
+                await ConfirmEvents();
+            }
+        }
+    }
+
+    private async Task CompleteSpecializedExecutionAsync()
+    {
+        if (State.ParentAgentId.IsNullOrEmpty())
+        {
+            return;
+        }
+
+        await PublishAsync(GrainId.Parse(State.ParentAgentId), new TaskCallbackEvent
+        {
+            TargetAgentId = State.ParentAgentId,
+            CallId = State.CallId,
+            Task = State.Task,
+            Reply = State.SpecializedState.ChatHistory.Last()
         });
-        await ConfirmEvents();
+        // TODO: maybe send callback to parent.
+        Logger.LogInformation("SpecializedRunDone");
+    }
+
+    private async Task CompleteOrchestratorExecutionAsync(string reply)
+    {
+        if (State.ParentAgentId.IsNullOrEmpty())
+        {
+            Logger.LogInformation("Result for task:\n\nTask: {Task}\n\nResult: {Result}", State.Task, reply);
+            return;
+        }
+
+        await PublishAsync(GrainId.Parse(State.ParentAgentId), new TaskCallbackEvent
+        {
+            TargetAgentId = State.ParentAgentId,
+            CallId = State.CallId,
+            Task = State.Task,
+            Reply = ChatMessage.CreateAssistantMessage(reply)
+        });
+        // TODO: maybe send callback to parent.
+        Logger.LogInformation("SpecializedRunDone");
     }
 
     protected override void GAgentTransitionState(AgentState state, StateLogEventBase<AgentStateLogEvent> @event)
@@ -184,8 +172,12 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     state.CallId = payload.CallId;
                     DoAsync(async () =>
                     {
-                        var grainId = this.GetGrainId();
-                        await HandleTaskSetEventAsync(new TaskSet());
+                        var analysisResult = await _taskAnalyzer.AnalyzeTaskAsync(State);
+                        RaiseEvent(new UpdateTaskAnalysicResultEvent
+                        {
+                            TaskAnalysisResult = analysisResult
+                        });
+                        await ConfirmEvents();
                     });
                 }
 
@@ -194,11 +186,14 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                 if (state.TaskAnalysisResult.RecommendedApproach == TaskApproach.Unknown)
                 {
                     state.TaskAnalysisResult = payload.TaskAnalysisResult;
-                    DoAsync(async () =>
+                    if (payload.TaskAnalysisResult.RecommendedApproach == TaskApproach.DirectExecution)
                     {
-                        var grainId = this.GetGrainId();
-                        await HandleTaskAnalysisDoneEventAsync(new TaskAnalysisDone());
-                    });
+                        DoAsync(async () => { await StartSpecializedExecutionAsync(); });
+                    }
+                    else if (payload.TaskAnalysisResult.RecommendedApproach == TaskApproach.Orchestration)
+                    {
+                        DoAsync(async () => { await StartOrchestratorExecutionAsync(); });
+                    }
                 }
 
                 break;
@@ -206,11 +201,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                 if (state.SpecializedState.ChatHistory.IsNullOrEmpty())
                 {
                     state.SpecializedState.ChatHistory.AddRange(payload.ChatHistory);
-                    DoAsync(async () =>
-                    {
-                        var grainId = this.GetGrainId();
-                        await HandleSpecializedRunDoneEventAsync(new SpecializedRunDone());
-                    });
+                    DoAsync(async () => { await CompleteSpecializedExecutionAsync(); });
                 }
 
                 break;
@@ -282,10 +273,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     if (decision == OrchestrationDecision.CompleteTask)
                     {
                         var result = await AggregateResultsAsync();
-                        await HandleOrchestratorRunDoneEventAsync(new OrchestratorRunDone()
-                        {
-                            Reply = result
-                        });
+                        await CompleteOrchestratorExecutionAsync(result);
                     }
                     else if (decision == OrchestrationDecision.CreateAdditionalTasks)
                     {
@@ -307,16 +295,16 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
     /// Schedules a one-time execution of HandleTaskSetEventAsync(new TaskSet()) using Orleans RegisterTimer.
     /// This ensures the event is triggered safely within the Grain context, avoiding thread-safety issues.
     /// </summary>
-    [Obsolete("Obsolete")]
     private void DoAsync(Func<Task> action)
     {
         // Orleans RegisterTimer ensures the callback runs in the Grain's context.
-        RegisterTimer(
-            async _ => await action(),
-            state: null,
-            dueTime: TimeSpan.Zero, // Trigger immediately
-            period: TimeSpan.FromMilliseconds(-1) // Only once
-        );
+        this.RegisterGrainTimer(action, new GrainTimerCreationOptions
+        {
+            DueTime = TimeSpan.Zero, // Trigger immediately
+            Period = TimeSpan.FromMilliseconds(-1), // Only once
+            Interleave = false,
+            KeepAlive = false
+        });
     }
 
     private async Task PublishAsync<T>(GrainId grainId, T @event) where T : EventBase
