@@ -10,11 +10,11 @@
         <PackageReference Include="Aevatar.Core.Abstractions"/>
         <PackageReference Include="Aevatar.Core"/>
         <PackageReference Include="Aevatar.EventSourcing.Core"/>
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\PsiOrleans.Common\PsiOrleans.Common.csproj" />
-      <ProjectReference Include="..\PsiOrleans.Specialized\PsiOrleans.Specialized.csproj" />
     </ItemGroup>
 
 </Project>

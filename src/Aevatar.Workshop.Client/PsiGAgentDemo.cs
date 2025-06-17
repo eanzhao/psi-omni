@@ -59,8 +59,6 @@ public static class PsiGAgentDemo
             };
             return new AgentConfiguration
             {
-                SystemPrompt = null,
-                AgentName = null,
                 Temperature = 0.7,
                 MaxTokens = 1000,
                 Model = modelConfig
@@ -79,8 +77,6 @@ public static class PsiGAgentDemo
             };
             return new AgentConfiguration
             {
-                SystemPrompt = null,
-                AgentName = null,
                 Temperature = 0,
                 MaxTokens = 0,
                 Model = modelConfig

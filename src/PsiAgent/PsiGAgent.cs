@@ -1,11 +1,8 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.Logging;
-using Microsoft.SemanticKernel.ChatCompletion;
 using PsiOrleans.Common.Interfaces;
 using PsiOrleans.Common.Models;
-using PsiOrleans.Specialized.Services;
-using Volo.Abp.Threading;
 
 namespace PsiAgent;
 
