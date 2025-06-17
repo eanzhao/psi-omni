@@ -19,6 +19,7 @@ public static class OrleansHostExtension
                     .AddLogStorageBasedLogConsistencyProvider()
                     .ConfigureLogging(logging => { logging.SetMinimumLevel(LogLevel.Information).AddConsole(); })
                     .UseAevatar()
+                    .UseDashboard()
                     ;
             })
             .UseConsoleLifetime();

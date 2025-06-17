@@ -23,6 +23,7 @@
         <PackageReference Include="Serilog.Sinks.Console" />
         <PackageReference Include="Serilog.Sinks.OpenTelemetry" />
         <PackageReference Include="Microsoft.SemanticKernel.Plugins.Web" />
+        <PackageReference Include="OrleansDashboard" />
     </ItemGroup>
 
     <ItemGroup>
