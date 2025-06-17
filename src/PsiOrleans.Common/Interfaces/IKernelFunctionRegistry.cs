@@ -11,6 +11,7 @@ public interface IKernelFunctionRegistry
     KernelPlugin? GetPlugin(string name);
     IEnumerable<KernelFunction> GetFunctions(IEnumerable<string> names);
     IEnumerable<KernelPlugin> GetPlugins(IEnumerable<string> names);
+    IEnumerable<string> GetAllFunctionNames();
     IEnumerable<string> GetAvailableFunctionNames();
     IEnumerable<string> GetAvailablePluginNames();
     KernelFunction? GetToolByQualifiedName(string qualifiedName);

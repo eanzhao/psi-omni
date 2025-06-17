@@ -138,6 +138,19 @@ public class KernelFunctionRegistry : IKernelFunctionRegistry
         return null;
     }
 
+    public IEnumerable<string> GetAllFunctionNames()
+    {
+        // Directly registered
+        foreach (var fn in _functions.Keys)
+            yield return fn;
+        // Plugin-contained
+        foreach (var plugin in _plugins.Values)
+        {
+            foreach (var function in plugin)
+                yield return $"{plugin.Name}.{function.Name}";
+        }
+    }
+
     public Dictionary<string, KernelFunction> GetToolsByQualifiedNames(IEnumerable<string> qualifiedNames)
     {
         var result = new Dictionary<string, KernelFunction>();
@@ -146,20 +159,29 @@ public class KernelFunctionRegistry : IKernelFunctionRegistry
             return result;
         foreach (var qualifiedName in qualifiedNames.Where(n => !string.IsNullOrWhiteSpace(n)))
         {
-            var function = GetToolByQualifiedName(qualifiedName);
-            if (function != null)
+            // Try direct
+            if (_functions.TryGetValue(qualifiedName, out var directFunc))
             {
-                result[qualifiedName] = function;
+                result[qualifiedName] = directFunc;
+                continue;
             }
-            else
+            // Try plugin
+            var parts = qualifiedName.Split('.', 2, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 2)
             {
-                notFound.Add(qualifiedName);
+                var pluginName = parts[0];
+                var functionName = parts[1];
+                if (_plugins.TryGetValue(pluginName, out var plugin) &&
+                    plugin.TryGetFunction(functionName, out var pluginFunc))
+                {
+                    result[qualifiedName] = pluginFunc;
+                    continue;
+                }
             }
+            notFound.Add(qualifiedName);
         }
         if (notFound.Any())
-        {
             _logger.LogWarning("Tools not found: {NotFoundTools}", string.Join(", ", notFound));
-        }
         _logger.LogInformation("Retrieved {FoundCount} of {RequestedCount} tools", result.Count, qualifiedNames.Count());
         return result;
     }

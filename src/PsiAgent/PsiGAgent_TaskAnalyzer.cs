@@ -33,9 +33,9 @@ public partial class PsiGAgent
             var registry = _kernelFactory.FunctionRegistry;
             if (registry != null)
             {
-                foreach (var name in registry.GetAvailableFunctionNames())
+                foreach (var name in registry.GetAllAvailableToolNames())
                 {
-                    var func = registry.GetFunction(name);
+                    var func = registry.GetToolByQualifiedName(name);
                     var desc = func?.Description?.Replace("\"", "'") ?? "No description";
                     toolInfos.Add($"{{\"name\":\"{name}\",\"description\":\"{desc}\"}}");
                 }

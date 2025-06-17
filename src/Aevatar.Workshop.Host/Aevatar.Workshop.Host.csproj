@@ -5,6 +5,8 @@
         <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <EnableSKExperimentalFeatures>true</EnableSKExperimentalFeatures>
+        <NoWarn>$(NoWarn);SKEXP0050</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -20,6 +22,7 @@
         <PackageReference Include="Serilog.AspNetCore" />
         <PackageReference Include="Serilog.Sinks.Console" />
         <PackageReference Include="Serilog.Sinks.OpenTelemetry" />
+        <PackageReference Include="Microsoft.SemanticKernel.Plugins.Web" />
     </ItemGroup>
 
     <ItemGroup>

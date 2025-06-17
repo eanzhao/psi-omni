@@ -40,7 +40,7 @@ public class KernelFactory : IKernelFactory
             var funcs = new List<KernelFunction>();
             foreach (var toolName in toolNames)
             {
-                var func = FunctionRegistry.GetFunction(toolName);
+                var func = FunctionRegistry.GetToolByQualifiedName(toolName);
                 if (func != null)
                 {
                     funcs.Add(func);

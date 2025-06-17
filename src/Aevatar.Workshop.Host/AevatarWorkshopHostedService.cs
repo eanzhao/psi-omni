@@ -3,7 +3,8 @@ using Volo.Abp;
 using PsiOrleans.Plugins;
 using PsiOrleans.Common.Interfaces;
 using Microsoft.SemanticKernel; // For KernelFunction, KernelPluginFactory, KernelFunctionFactory
-using Aevatar.Workshop.Host; // For DemoPlugin
+using Microsoft.SemanticKernel.Data;
+using Microsoft.SemanticKernel.Plugins.Web.Google; // For DemoPlugin
 
 namespace Aevatar.Workshop.Host;
 
@@ -31,18 +32,39 @@ public class AevatarWorkshopHostedService : IHostedService
             // Register DemoPlugin functions
             var demoFunctions = new List<KernelFunction>
             {
-                KernelFunctionFactory.CreateFromMethod((int a, int b) => DemoPlugin.AddNumbersAsync(a, b), "AddNumbers", "Add two numbers"),
-                KernelFunctionFactory.CreateFromMethod(() => DemoPlugin.GetUSGDP2024Async(), "GetUSGDP2024", "Get US GDP for 2024"),
-                KernelFunctionFactory.CreateFromMethod(() => DemoPlugin.GetNYGDP2024Async(), "GetNYGDP2024", "Get New York GDP for 2024"),
-                KernelFunctionFactory.CreateFromMethod((double part, double whole) => DemoPlugin.CalculatePercentageAsync(part, whole), "CalculatePercentage", "Calculate percentage of part over whole")
+                KernelFunctionFactory.CreateFromMethod((int a, int b) => DemoPlugin.AddNumbersAsync(a, b), "AddNumbers",
+                    "Add two numbers"),
+                // KernelFunctionFactory.CreateFromMethod(() => DemoPlugin.GetUSGDP2024Async(), "GetUSGDP2024",
+                //     "Get US GDP for 2024"),
+                // KernelFunctionFactory.CreateFromMethod(() => DemoPlugin.GetNYGDP2024Async(), "GetNYGDP2024",
+                //     "Get New York GDP for 2024"),
+                KernelFunctionFactory.CreateFromMethod(
+                    (double part, double whole) => DemoPlugin.CalculatePercentageAsync(part, whole),
+                    "CalculatePercentage", "Calculate percentage of part over whole")
             };
             var demoPlugin = KernelPluginFactory.CreateFromFunctions("DemoPlugin", demoFunctions);
             functionRegistry.RegisterPlugin("DemoPlugin", demoPlugin);
             functionRegistry.RegisterFunction("AddNumbers", demoPlugin["AddNumbers"]);
-            functionRegistry.RegisterFunction("GetUSGDP2024", demoPlugin["GetUSGDP2024"]);
-            functionRegistry.RegisterFunction("GetNYGDP2024", demoPlugin["GetNYGDP2024"]);
+            // functionRegistry.RegisterFunction("GetUSGDP2024", demoPlugin["GetUSGDP2024"]);
+            // functionRegistry.RegisterFunction("GetNYGDP2024", demoPlugin["GetNYGDP2024"]);
             functionRegistry.RegisterFunction("CalculatePercentage", demoPlugin["CalculatePercentage"]);
+            var googleTextSearch = GetGoogleTextSearch();
+            functionRegistry.RegisterPlugin(
+                "GoogleWebSearch",
+                googleTextSearch.CreateWithGetTextSearchResults("GoogleWebSearch")
+            );
         }
+    }
+
+    private GoogleTextSearch GetGoogleTextSearch()
+    {
+        var apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
+        var searchEngineId = Environment.GetEnvironmentVariable("GOOGLE_SEARCH_ENGINE_ID");
+
+        return new GoogleTextSearch(
+            searchEngineId: searchEngineId,
+            apiKey: apiKey
+        );
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
