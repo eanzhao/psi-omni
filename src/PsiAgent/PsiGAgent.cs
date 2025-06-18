@@ -75,16 +75,23 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
     {
         if (State.TaskAnalysisResult.RecommendedApproach == TaskApproach.DirectExecution)
         {
-            var chatHistory = await ExecuteSpecializedAsync();
-            if (chatHistory != null)
+            try
             {
-                var serializable = chatHistory.Select(m => new ChatMessage(m.Role.ToString(), m.Content))
-                    .ToList();
-                RaiseEvent(new UpdateSpecializedRunResultEvent
+                var chatHistory = await ExecuteSpecializedAsync();
+                if (chatHistory != null)
                 {
-                    ChatHistory = serializable
-                });
-                await ConfirmEvents();
+                    var serializable = chatHistory.Select(m => new ChatMessage(m.Role.ToString(), m.Content))
+                        .ToList();
+                    RaiseEvent(new UpdateSpecializedRunResultEvent
+                    {
+                        ChatHistory = serializable
+                    });
+                    await ConfirmEvents();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError(ex, "Error executing specialized task");
             }
         }
     }
@@ -109,6 +116,8 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
     {
         if (State.ParentAgentId.IsNullOrEmpty())
         {
+            Logger.LogInformation("Result for task:\n\nTask: {Task}\n\nResult: {Result}", State.Task,
+                State.SpecializedState.ChatHistory.Last()?.Content);
             return;
         }
 
