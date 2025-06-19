@@ -1,6 +1,7 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using PsiOrleans.Common.Interfaces;
 using PsiOrleans.Common.Models;
 
@@ -80,7 +81,21 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                 var chatHistory = await ExecuteSpecializedAsync();
                 if (chatHistory != null)
                 {
-                    var serializable = chatHistory.Select(m => new ChatMessage(m.Role.ToString(), m.Content))
+                    var serializable = chatHistory.Select(m =>
+                        {
+                            if (m is OpenAIChatMessageContent mm)
+                            {
+                                var toolCalls = mm.ToolCalls.Select(x => new ToolCall()
+                                {
+                                    FunctionName = x.FunctionName,
+                                    FunctionArguments = x.FunctionArguments.ToString()
+                                }).ToList();
+                                return new ChatMessage(m.Role.ToString(), m.Content, m.AuthorName ?? string.Empty,
+                                    toolCalls);
+                            }
+
+                            return new ChatMessage(m.Role.ToString(), m.Content);
+                        })
                         .ToList();
                     RaiseEvent(new UpdateSpecializedRunResultEvent
                     {
