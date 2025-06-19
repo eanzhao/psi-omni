@@ -4,17 +4,18 @@
         <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <NoWarn>$(NoWarn);SKEXP0001</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Aevatar.Core.Abstractions"/>
         <PackageReference Include="Aevatar.Core"/>
         <PackageReference Include="Aevatar.EventSourcing.Core"/>
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\PsiOrleans.Common\PsiOrleans.Common.csproj" />
+        <ProjectReference Include="..\PsiOrleans.Common\PsiOrleans.Common.csproj"/>
     </ItemGroup>
 
 </Project>

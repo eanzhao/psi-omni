@@ -106,7 +106,7 @@ Based on this progress, determine the next action:
 
 Respond with exactly one word: COMPLETE, WAIT, CREATE_ADDITIONAL, or RETRY_TIMEOUTS
 
-IMPORTANT: We cannot complete the task if there are still subtasks not started.
+IMPORTANT: We cannot complete the task if there are still subtasks not started. We must not wait if there are no more pending subtasks.
 ";
 
             var result = await chatService.GetChatMessageContentAsync(analysisPrompt);

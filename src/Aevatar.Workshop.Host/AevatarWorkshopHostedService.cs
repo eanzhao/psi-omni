@@ -4,7 +4,8 @@ using PsiOrleans.Plugins;
 using PsiOrleans.Common.Interfaces;
 using Microsoft.SemanticKernel; // For KernelFunction, KernelPluginFactory, KernelFunctionFactory
 using Microsoft.SemanticKernel.Data;
-using Microsoft.SemanticKernel.Plugins.Web.Google; // For DemoPlugin
+using Microsoft.SemanticKernel.Plugins.Web.Google;
+using Microsoft.SemanticKernel.Plugins.Web.Tavily;
 
 namespace Aevatar.Workshop.Host;
 
@@ -48,11 +49,11 @@ public class AevatarWorkshopHostedService : IHostedService
             // functionRegistry.RegisterFunction("GetUSGDP2024", demoPlugin["GetUSGDP2024"]);
             // functionRegistry.RegisterFunction("GetNYGDP2024", demoPlugin["GetNYGDP2024"]);
             functionRegistry.RegisterFunction("CalculatePercentage", demoPlugin["CalculatePercentage"]);
-            var googleTextSearch = GetGoogleTextSearch();
-            functionRegistry.RegisterPlugin(
-                "GoogleWebSearch",
-                googleTextSearch.CreateWithGetTextSearchResults("GoogleWebSearch")
-            );
+
+            var tavilyTextSearch = GetTavilyTextSearch();
+            functionRegistry.RegisterPlugin("TavilyWebSearch",
+                tavilyTextSearch.CreateWithGetTextSearchResults("TavilyWebSearch",
+                    "Search for web content using Tavily"));
         }
     }
 
@@ -65,6 +66,12 @@ public class AevatarWorkshopHostedService : IHostedService
             searchEngineId: searchEngineId,
             apiKey: apiKey
         );
+    }
+
+    private TavilyTextSearch GetTavilyTextSearch()
+    {
+        var apiKey = Environment.GetEnvironmentVariable("TAVILY_API_KEY");
+        return new TavilyTextSearch(apiKey);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
