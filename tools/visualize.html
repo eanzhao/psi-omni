@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psi Agent Task Relationship Graph</title>
+    <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/standalone/umd/vis-network.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #taskGraph {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            margin-top: 20px;
+        }
+        #jsonInput {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        #errorMessage {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #customTooltip {
+            position: absolute;
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            display: none;
+            font-size: 14px;
+            max-width: 400px;
+            z-index: 1000;
+        }
+        #customTooltip b {
+            color: #FFD700;
+        }
+    </style>
+</head>
+<body>
+    <h2>Psi Agent Task Relationship Graph</h2>
+    <p>Paste your JSON data below and click "Render Graph" to visualize the task relationships.</p>
+    <textarea id="jsonInput" placeholder="Paste your JSON data here..."></textarea>
+    <button onclick="renderGraph()">Render Graph</button>
+    <div id="errorMessage"></div>
+    <div id="taskGraph"></div>
+    <div id="customTooltip"></div>
+
+    <script>
+        let network = null;
+        const tooltip = document.getElementById('customTooltip');
+
+        function renderGraph() {
+            const jsonInput = document.getElementById('jsonInput').value;
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.style.display = 'none';
+
+            let data;
+            try {
+                data = JSON.parse(jsonInput);
+            } catch (e) {
+                errorMessage.textContent = 'Error: Invalid JSON format. Please check your input.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            // Initialize Vis.js data
+            const nodes = new vis.DataSet();
+            const edges = new vis.DataSet();
+
+            // Map to store agent details for quick lookup
+            const agentMap = new Map();
+            data.forEach(agent => {
+                agentMap.set(agent.id, {
+                    task: agent.state.Task,
+                    agentId: agent.state.AgentId,
+                    completedCallbacks: agent.state.Orchestrator.CompletedCallbacks || []
+                });
+            });
+
+            // Process parent agent (depth 0)
+            const parentAgent = data.find(agent => agent.depth === 0);
+            if (!parentAgent) {
+                errorMessage.textContent = 'Error: No parent agent (depth 0) found in the data.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            // Add parent node with truncated label
+            nodes.add({
+                id: parentAgent.id,
+                label: truncateLabel(parentAgent.state.Task, 20),
+                shape: 'box',
+                color: '#FF9999',
+                tooltipContent: `<b>Task:</b> ${parentAgent.state.Task}<br>` +
+                                `<b>Agent ID:</b> ${parentAgent.id}<br>` +
+                                `<b>Execution Time:</b> Not applicable (orchestrator)<br>` +
+                                `<b>Result:</b> Orchestrates subtasks`,
+                widthConstraint: { maximum: 150 }
+            });
+
+            // Process subtasks and dependencies
+            const subtasks = parentAgent.state.Orchestrator.CurrentSubTasks || [];
+            const completedCallbacks = parentAgent.state.Orchestrator.CompletedCallbacks || [];
+
+            // Add subtask nodes
+            subtasks.forEach((subtask, index) => {
+                const callback = completedCallbacks.find(cb => cb.CallId === subtask.SubTaskId);
+                const childAgentId = callback ? callback.ChildAgentId : null;
+                const taskText = subtask.ReframedTask || subtask.Task;
+                const result = callback ? callback.ResultMessage : 'No result available';
+                const executionTime = callback ? callback.ExecutionTime : 'Not completed';
+
+                nodes.add({
+                    id: subtask.SubTaskId,
+                    label: truncateLabel(taskText, 20),
+                    shape: 'box',
+                    color: subtask.Task.includes('Retrieve') ? '#99CCFF' : '#99FF99',
+                    tooltipContent: `<b>Task:</b> ${taskText}<br>` +
+                                    `<b>Agent ID:</b> ${childAgentId || 'Unknown'}<br>` +
+                                    `<b>Execution Time:</b> ${executionTime}<br>` +
+                                    `<b>Result:</b> ${result}`,
+                    widthConstraint: { maximum: 150 }
+                });
+
+                // Add subtask edge (blue, solid)
+                edges.add({
+                    from: parentAgent.id,
+                    to: subtask.SubTaskId,
+                    arrows: 'to',
+                    dashes: false,
+                    color: '#007BFF' // Blue for subtask relationships
+                });
+
+                // Add dependency edges (orange, dashed)
+                Object.keys(subtask.DependencyResults || {}).forEach(depSubTaskId => {
+                    edges.add({
+                        from: depSubTaskId,
+                        to: subtask.SubTaskId,
+                        arrows: 'to',
+                        dashes: true,
+                        color: '#FF6200' // Orange for dependency relationships
+                    });
+                });
+            });
+
+            // Create or update network
+            const container = document.getElementById('taskGraph');
+            const visData = { nodes, edges };
+            const options = {
+                layout: {
+                    hierarchical: {
+                        direction: 'UD',
+                        sortMethod: 'directed'
+                    }
+                },
+                edges: {
+                    arrows: { to: { enabled: true, scaleFactor: 1 } },
+                    font: { align: 'middle', color: '#333' },
+                    color: '#333' // Default color, overridden by edge-specific colors
+                },
+                nodes: {
+                    font: { size: 14, color: '#333' },
+                    borderWidth: 2
+                },
+                interaction: {
+                    hover: true
+                },
+                physics: false
+            };
+
+            if (network) {
+                network.destroy();
+            }
+            network = new vis.Network(container, visData, options);
+
+            // Custom tooltip handling
+            network.on('hoverNode', function(params) {
+                const node = nodes.get(params.node);
+                tooltip.innerHTML = node.tooltipContent;
+                tooltip.style.display = 'block';
+                tooltip.style.left = (params.event.pageX + 10) + 'px';
+                tooltip.style.top = (params.event.pageY + 10) + 'px';
+            });
+
+            network.on('blurNode', function() {
+                tooltip.style.display = 'none';
+            });
+        }
+
+        // Utility function to truncate labels generically
+        function truncateLabel(text, maxLength) {
+            // Remove markdown or special characters for cleaner labels
+            const cleanText = text.replace(/###.*?\n|\n|\*\*.*?\*\*|[^a-zA-Z0-9\s]/g, ' ').trim();
+            return cleanText.length > maxLength ? cleanText.substring(0, maxLength - 3) + '...' : cleanText;
+        }
+    </script>
+</body>
+</html>
