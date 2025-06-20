@@ -15,6 +15,12 @@ public static class MathFunctionRegistration
                 "Add",
                 "Add two numbers together"));
 
+        registry.RegisterFunction("Math.Subtract", 
+            KernelFunctionFactory.CreateFromMethod(
+                (double a, double b) => a - b,
+                "Subtract",
+                "Subtract two numbers"));
+
         registry.RegisterFunction("Math.Multiply", 
             KernelFunctionFactory.CreateFromMethod(
                 (double a, double b) => a * b,
