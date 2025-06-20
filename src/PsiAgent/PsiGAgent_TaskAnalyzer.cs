@@ -1,5 +1,7 @@
 using Microsoft.SemanticKernel.ChatCompletion;
+using PsiOrleans.Common.Interfaces;
 using PsiOrleans.Common.Models;
+using Microsoft.Extensions.Logging;
 
 namespace PsiAgent;
 
@@ -43,33 +45,48 @@ public partial class PsiGAgent
 
             var toolListJson = "[" + string.Join(",", toolInfos) + "]";
 
-            var analysisPrompt =
-                "Analyze this task and determine if it should be handled by an ORCHESTRATOR or SPECIALIZED agent.\n" +
-                $"Task: {taskDescription}\n" +
-                $"Available tools (with descriptions): {toolListJson}\n" +
-                "ORCHESTRATOR agents should handle tasks that:\n" +
-                "- Require breaking down into multiple subtasks\n" +
-                "- Need coordination between different capabilities\n" +
-                "- Involve complex multi-step workflows\n" +
-                "- Require delegation and result aggregation\n" +
-                "SPECIALIZED agents should handle tasks that:\n" +
-                "- Can be completed with direct tool usage\n" +
-                "- Are focused and specific\n" +
-                "- Don't require task decomposition\n" +
-                "- Can be solved with available functions\n" +
-                "Respond in the following JSON format:\n{\n  \"role\": \"ORCHESTRATOR\" or \"SPECIALIZED\",\n  \"recommended_tools\": [list of tool names from available tools]\n}\n" +
-                "When choosing tools, use both the name and the description to decide which are most relevant.";
+            var analysisPrompt = $@"
+Analyze this task and determine if it should be handled by an ORCHESTRATOR or SPECIALIZED agent.
 
-            // Execute LLM analysis
+Task: {taskDescription}
+
+Available tools (with descriptions): {toolListJson}
+
+ORCHESTRATOR agents should handle tasks that:
+- Require breaking down into multiple subtasks
+- Need coordination between different capabilities
+- Involve complex multi-step workflows
+- Require delegation and result aggregation
+
+SPECIALIZED agents should handle tasks that:
+- Can be completed with direct tool usage
+- Are focused and specific
+- Don't require task decomposition
+- Can be solved with available functions
+
+Respond in the following JSON format:
+{{
+  ""role"": ""ORCHESTRATOR"" or ""SPECIALIZED"",
+  ""recommended_tools"": [""list of tool names from available tools""]
+}}
+Example:
+{{
+  ""role"": ""SPECIALIZED"",
+  ""recommended_tools"": [""Math.Add"", ""Math.Subtract""]
+}}
+When choosing tools, use both the name and the description to decide which are most relevant.";
+
             var result = await chatService.GetChatMessageContentAsync(analysisPrompt);
-            var response = result.Content?.Trim() ?? "{\"role\":\"SPECIALIZED\",\"recommended_tools\":[]}";
+            var responseContent = result.Content ?? "";
+
+            Logger.LogInformation("LLM task analysis response: {Response}", responseContent);
 
             // 解析 JSON 响应
             var role = "SPECIALIZED";
             var recommendedTools = new List<string>();
             try
             {
-                var json = System.Text.Json.JsonDocument.Parse(StripMarkdownJsonBlock(response));
+                var json = System.Text.Json.JsonDocument.Parse(StripMarkdownJsonBlock(responseContent));
                 if (json.RootElement.TryGetProperty("role", out var roleProp))
                     role = roleProp.GetString()?.ToUpperInvariant() ?? "SPECIALIZED";
                 if (json.RootElement.TryGetProperty("recommended_tools", out var toolsProp) &&
@@ -88,7 +105,7 @@ public partial class PsiGAgent
             {
                 RecommendedApproach = isOrchestrator ? TaskApproach.Orchestration : TaskApproach.DirectExecution,
                 CanBeDecomposed = isOrchestrator,
-                AnalysisNotes = $"LLM analysis result: {response}",
+                AnalysisNotes = $"LLM analysis result: {responseContent}",
                 RecommendedTools = recommendedTools
             };
         }

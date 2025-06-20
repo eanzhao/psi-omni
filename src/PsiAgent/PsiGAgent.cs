@@ -224,22 +224,21 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
 
                 break;
             case UpdateSubTasksEvent payload:
-                if (state.Orchestrator.CurrentSubTasks.IsNullOrEmpty())
-                {
-                    state.Orchestrator.CurrentSubTasks.AddRange(payload.SubTasks);
-                    state.Orchestrator.ExecutionPlan = string.Join("\n", payload.SubTasks.Select(st => $"- {st.Task}"));
+                if (payload.SubTasks.Count == 0) break;
+                if (state.Orchestrator.CurrentSubTasks.Count == 0)
                     state.Orchestrator.CreatedAt = DateTime.UtcNow;
-                    state.Orchestrator.LastUpdated = DateTime.UtcNow;
+                state.Orchestrator.LastUpdated = DateTime.UtcNow;
+                state.Orchestrator.CurrentSubTasks.AddRange(payload.SubTasks);
+                state.Orchestrator.ExecutionPlan = string.Join("\n", payload.SubTasks.Select(st => $"- {st.Task}"));
 
-                    DoAsync(async () =>
+                DoAsync(async () =>
+                {
+                    var callbackDatas = await DelegateStartableSubTasksAsync();
+                    RaiseEvent(new UpdateSubTaskCallbackDatasEvent
                     {
-                        var callbackDatas = await DelegateStartableSubTasksAsync();
-                        RaiseEvent(new UpdateSubTaskCallbackDatasEvent
-                        {
-                            CallbackDatas = callbackDatas
-                        });
+                        CallbackDatas = callbackDatas
                     });
-                }
+                });
 
                 break;
             case UpdateSubTaskCallbackDatasEvent payload:
@@ -287,7 +286,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
 
                 DoAsync(async () =>
                 {
-                    var decision = await AnalyzeProgressAsync();
+                    var (decision, newSubTasks) = await AnalyzeProgressAsync();
                     if (decision == OrchestrationDecision.CompleteTask)
                     {
                         var result = await AggregateResultsAsync();
@@ -295,11 +294,21 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     }
                     else if (decision == OrchestrationDecision.CreateAdditionalTasks)
                     {
-                        var callbackDatas = await DelegateStartableSubTasksAsync();
-                        RaiseEvent(new UpdateSubTaskCallbackDatasEvent
+                        if (newSubTasks.Count == 0)
                         {
-                            CallbackDatas = callbackDatas
-                        });
+                            var callbackDatas = await DelegateStartableSubTasksAsync();
+                            RaiseEvent(new UpdateSubTaskCallbackDatasEvent
+                            {
+                                CallbackDatas = callbackDatas
+                            });
+                        }
+                        else
+                        {
+                            RaiseEvent(new UpdateSubTasksEvent()
+                            {
+                                SubTasks = newSubTasks
+                            });
+                        }
                     }
                 });
 
