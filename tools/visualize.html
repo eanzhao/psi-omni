@@ -14,7 +14,7 @@
         }
         #taskGraph {
             width: 100%;
-            height: 600px;
+            height: 800px;
             border: 1px solid #ccc;
             background-color: #fff;
             margin-top: 20px;
@@ -55,11 +55,16 @@
         #customTooltip b {
             color: #FFD700;
         }
+        .depth-indicator {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
     <h2>Psi Agent Task Relationship Graph</h2>
-    <p>Paste your JSON data below and click "Render Graph" to visualize the task relationships.</p>
+    <p>Paste your JSON data below and click "Render Graph" to visualize the nested task relationships.</p>
     <textarea id="jsonInput" placeholder="Paste your JSON data here..."></textarea>
     <button onclick="renderGraph()">Render Graph</button>
     <div id="errorMessage"></div>
@@ -94,74 +99,21 @@
                 agentMap.set(agent.id, {
                     task: agent.state.Task,
                     agentId: agent.state.AgentId,
-                    completedCallbacks: agent.state.Orchestrator.CompletedCallbacks || []
+                    depth: agent.depth,
+                    completedCallbacks: agent.state.Orchestrator?.CompletedCallbacks || [],
+                    currentSubTasks: agent.state.Orchestrator?.CurrentSubTasks || []
                 });
             });
 
-            // Process parent agent (depth 0)
-            const parentAgent = data.find(agent => agent.depth === 0);
-            if (!parentAgent) {
-                errorMessage.textContent = 'Error: No parent agent (depth 0) found in the data.';
-                errorMessage.style.display = 'block';
-                return;
-            }
+            // Process all agents recursively by depth
+            const processedNodes = new Set();
+            const processedEdges = new Set();
 
-            // Add parent node with truncated label
-            nodes.add({
-                id: parentAgent.id,
-                label: truncateLabel(parentAgent.state.Task, 20),
-                shape: 'box',
-                color: '#FF9999',
-                tooltipContent: `<b>Task:</b> ${parentAgent.state.Task}<br>` +
-                                `<b>Agent ID:</b> ${parentAgent.id}<br>` +
-                                `<b>Execution Time:</b> Not applicable (orchestrator)<br>` +
-                                `<b>Result:</b> Orchestrates subtasks`,
-                widthConstraint: { maximum: 150 }
-            });
+            // Sort agents by depth to process in order
+            const sortedAgents = data.sort((a, b) => a.depth - b.depth);
 
-            // Process subtasks and dependencies
-            const subtasks = parentAgent.state.Orchestrator.CurrentSubTasks || [];
-            const completedCallbacks = parentAgent.state.Orchestrator.CompletedCallbacks || [];
-
-            // Add subtask nodes
-            subtasks.forEach((subtask, index) => {
-                const callback = completedCallbacks.find(cb => cb.CallId === subtask.SubTaskId);
-                const childAgentId = callback ? callback.ChildAgentId : null;
-                const taskText = subtask.ReframedTask || subtask.Task;
-                const result = callback ? callback.ResultMessage : 'No result available';
-                const executionTime = callback ? callback.ExecutionTime : 'Not completed';
-
-                nodes.add({
-                    id: subtask.SubTaskId,
-                    label: truncateLabel(taskText, 20),
-                    shape: 'box',
-                    color: subtask.Task.includes('Retrieve') ? '#99CCFF' : '#99FF99',
-                    tooltipContent: `<b>Task:</b> ${taskText}<br>` +
-                                    `<b>Agent ID:</b> ${childAgentId || 'Unknown'}<br>` +
-                                    `<b>Execution Time:</b> ${executionTime}<br>` +
-                                    `<b>Result:</b> ${result}`,
-                    widthConstraint: { maximum: 150 }
-                });
-
-                // Add subtask edge (blue, solid)
-                edges.add({
-                    from: parentAgent.id,
-                    to: subtask.SubTaskId,
-                    arrows: 'to',
-                    dashes: false,
-                    color: '#007BFF' // Blue for subtask relationships
-                });
-
-                // Add dependency edges (orange, dashed)
-                Object.keys(subtask.DependencyResults || {}).forEach(depSubTaskId => {
-                    edges.add({
-                        from: depSubTaskId,
-                        to: subtask.SubTaskId,
-                        arrows: 'to',
-                        dashes: true,
-                        color: '#FF6200' // Orange for dependency relationships
-                    });
-                });
+            sortedAgents.forEach(agent => {
+                processAgent(agent, agentMap, nodes, edges, processedNodes, processedEdges);
             });
 
             // Create or update network
@@ -171,20 +123,27 @@
                 layout: {
                     hierarchical: {
                         direction: 'UD',
-                        sortMethod: 'directed'
+                        sortMethod: 'directed',
+                        levelSeparation: 150,
+                        nodeSpacing: 200
                     }
                 },
                 edges: {
                     arrows: { to: { enabled: true, scaleFactor: 1 } },
-                    font: { align: 'middle', color: '#333' },
-                    color: '#333' // Default color, overridden by edge-specific colors
+                    font: { align: 'middle', color: '#333', size: 12 },
+                    color: '#333',
+                    width: 2
                 },
                 nodes: {
-                    font: { size: 14, color: '#333' },
-                    borderWidth: 2
+                    font: { size: 12, color: '#333' },
+                    borderWidth: 2,
+                    shape: 'box',
+                    margin: 10
                 },
                 interaction: {
-                    hover: true
+                    hover: true,
+                    zoomView: true,
+                    dragView: true
                 },
                 physics: false
             };
@@ -208,7 +167,150 @@
             });
         }
 
-        // Utility function to truncate labels generically
+        function processAgent(agent, agentMap, nodes, edges, processedNodes, processedEdges) {
+            const agentId = agent.id;
+            
+            // Skip if already processed
+            if (processedNodes.has(agentId)) {
+                return;
+            }
+            processedNodes.add(agentId);
+
+            // Add the agent node
+            const nodeColor = getNodeColor(agent.depth);
+            const nodeLabel = truncateLabel(agent.state.Task, 25);
+            
+            nodes.add({
+                id: agentId,
+                label: nodeLabel,
+                shape: 'box',
+                color: nodeColor,
+                tooltipContent: createTooltipContent(agent, agentMap),
+                widthConstraint: { maximum: 200 },
+                heightConstraint: { minimum: 60 }
+            });
+
+            // Process parent relationship
+            if (agent.state.ParentAgentId && agent.state.ParentAgentId !== '') {
+                const edgeId = `${agent.state.ParentAgentId}-${agentId}`;
+                if (!processedEdges.has(edgeId)) {
+                    edges.add({
+                        from: agent.state.ParentAgentId,
+                        to: agentId,
+                        arrows: 'to',
+                        dashes: false,
+                        color: '#007BFF',
+                        width: 2
+                    });
+                    processedEdges.add(edgeId);
+                }
+            }
+
+            // Process subtasks if this agent has them
+            if (agent.state.Orchestrator && agent.state.Orchestrator.CurrentSubTasks) {
+                agent.state.Orchestrator.CurrentSubTasks.forEach(subtask => {
+                    // Add subtask node
+                    const subtaskId = subtask.SubTaskId;
+                    if (!processedNodes.has(subtaskId)) {
+                        const subtaskColor = getNodeColor(agent.depth + 1);
+                        const subtaskLabel = truncateLabel(subtask.ReframedTask || subtask.Task, 25);
+                        
+                        nodes.add({
+                            id: subtaskId,
+                            label: subtaskLabel,
+                            shape: 'box',
+                            color: subtaskColor,
+                            tooltipContent: createSubtaskTooltipContent(subtask, agentMap),
+                            widthConstraint: { maximum: 200 },
+                            heightConstraint: { minimum: 60 }
+                        });
+                        processedNodes.add(subtaskId);
+                    }
+
+                    // Add subtask edge
+                    const subtaskEdgeId = `${agentId}-${subtaskId}`;
+                    if (!processedEdges.has(subtaskEdgeId)) {
+                        edges.add({
+                            from: agentId,
+                            to: subtaskId,
+                            arrows: 'to',
+                            dashes: false,
+                            color: '#28a745',
+                            width: 2
+                        });
+                        processedEdges.add(subtaskEdgeId);
+                    }
+
+                    // Process dependencies
+                    Object.keys(subtask.DependencyResults || {}).forEach(depSubTaskId => {
+                        const depEdgeId = `${depSubTaskId}-${subtaskId}`;
+                        if (!processedEdges.has(depEdgeId)) {
+                            edges.add({
+                                from: depSubTaskId,
+                                to: subtaskId,
+                                arrows: 'to',
+                                dashes: true,
+                                color: '#FF6200',
+                                width: 1
+                            });
+                            processedEdges.add(depEdgeId);
+                        }
+                    });
+                });
+            }
+        }
+
+        function getNodeColor(depth) {
+            const colors = [
+                '#FF9999', // Depth 0 - Red
+                '#99CCFF', // Depth 1 - Blue
+                '#99FF99', // Depth 2 - Green
+                '#FFCC99', // Depth 3 - Orange
+                '#CC99FF', // Depth 4 - Purple
+                '#FFFF99', // Depth 5 - Yellow
+                '#FF99CC', // Depth 6 - Pink
+                '#99FFFF'  // Depth 7 - Cyan
+            ];
+            return colors[depth % colors.length];
+        }
+
+        function createTooltipContent(agent, agentMap) {
+            const completedCallbacks = agent.state.Orchestrator?.CompletedCallbacks || [];
+            const currentSubTasks = agent.state.Orchestrator?.CurrentSubTasks || [];
+            
+            let content = `<b>Task:</b> ${agent.state.Task}<br>`;
+            content += `<b>Agent ID:</b> ${agent.id}<br>`;
+            content += `<b>Depth:</b> ${agent.depth}<br>`;
+            content += `<b>SubTasks:</b> ${currentSubTasks.length}<br>`;
+            content += `<b>Completed:</b> ${completedCallbacks.length}<br>`;
+            
+            if (completedCallbacks.length > 0) {
+                const lastCallback = completedCallbacks[completedCallbacks.length - 1];
+                content += `<b>Last Execution:</b> ${lastCallback.ExecutionTime}<br>`;
+                content += `<b>Status:</b> ${lastCallback.IsSuccess ? 'Success' : 'Failed'}<br>`;
+            }
+            
+            return content;
+        }
+
+        function createSubtaskTooltipContent(subtask, agentMap) {
+            let content = `<b>SubTask:</b> ${subtask.ReframedTask || subtask.Task}<br>`;
+            content += `<b>SubTask ID:</b> ${subtask.SubTaskId}<br>`;
+            content += `<b>Status:</b> ${subtask.Status}<br>`;
+            content += `<b>Priority:</b> ${subtask.Priority}<br>`;
+            content += `<b>Can Start:</b> ${subtask.CanStart}<br>`;
+            
+            if (subtask.RequiredTools && subtask.RequiredTools.length > 0) {
+                content += `<b>Required Tools:</b> ${subtask.RequiredTools.join(', ')}<br>`;
+            }
+            
+            if (subtask.Dependencies && subtask.Dependencies.length > 0) {
+                content += `<b>Dependencies:</b> ${subtask.Dependencies.join(', ')}<br>`;
+            }
+            
+            return content;
+        }
+
         function truncateLabel(text, maxLength) {
             // Remove markdown or special characters for cleaner labels
             const cleanText = text.replace(/###.*?\n|\n|\*\*.*?\*\*|[^a-zA-Z0-9\s]/g, ' ').trim();
