@@ -96,13 +96,7 @@
             // Map to store agent details for quick lookup
             const agentMap = new Map();
             data.forEach(agent => {
-                agentMap.set(agent.id, {
-                    task: agent.state.Task,
-                    agentId: agent.state.AgentId,
-                    depth: agent.depth,
-                    completedCallbacks: agent.state.Orchestrator?.CompletedCallbacks || [],
-                    currentSubTasks: agent.state.Orchestrator?.CurrentSubTasks || []
-                });
+                agentMap.set(agent.id, agent);
             });
 
             // Process all agents recursively by depth
@@ -209,6 +203,10 @@
             // Process subtasks if this agent has them
             if (agent.state.Orchestrator && agent.state.Orchestrator.CurrentSubTasks) {
                 agent.state.Orchestrator.CurrentSubTasks.forEach(subtask => {
+                    const callback = (agent.state.Orchestrator.CompletedCallbacks || []).find(cb => cb.CallId === subtask.SubTaskId);
+                    const childAgentId = callback ? callback.ChildAgentId : null;
+                    const childAgent = childAgentId ? agentMap.get(childAgentId) : null;
+
                     // Add subtask node
                     const subtaskId = subtask.SubTaskId;
                     if (!processedNodes.has(subtaskId)) {
@@ -220,7 +218,7 @@
                             label: subtaskLabel,
                             shape: 'box',
                             color: subtaskColor,
-                            tooltipContent: createSubtaskTooltipContent(subtask, agentMap),
+                            tooltipContent: createSubtaskTooltipContent(subtask, childAgent),
                             widthConstraint: { maximum: 200 },
                             heightConstraint: { minimum: 60 }
                         });
@@ -278,7 +276,7 @@
             const completedCallbacks = agent.state.Orchestrator?.CompletedCallbacks || [];
             const currentSubTasks = agent.state.Orchestrator?.CurrentSubTasks || [];
             
-            let content = `<b>Task:</b> ${agent.state.Task}<br>`;
+            let content = `<b>Task:</b><div style="max-height: 100px; overflow-y: auto; background-color: #444; padding: 5px; border-radius: 3px;">${escapeHtml(agent.state.Task)}</div>`;
             content += `<b>Agent ID:</b> ${agent.id}<br>`;
             content += `<b>Depth:</b> ${agent.depth}<br>`;
             content += `<b>SubTasks:</b> ${currentSubTasks.length}<br>`;
@@ -290,11 +288,28 @@
                 content += `<b>Status:</b> ${lastCallback.IsSuccess ? 'Success' : 'Failed'}<br>`;
             }
             
+            const chatHistory = agent.state.SpecializedState?.ChatHistory;
+            if (chatHistory && chatHistory.length > 0) {
+                content += `<hr><b>Chat History:</b><br>`;
+                const historyText = chatHistory.map(msg => {
+                    let msgContent = `<b>${msg.Role}:</b>`;
+                    if (msg.Content) {
+                        msgContent += ` ${escapeHtml(msg.Content)}`;
+                    }
+                    if (msg.ToolCalls && msg.ToolCalls.length > 0) {
+                        const tools = msg.ToolCalls.map(tc => `[${tc.FunctionName}]`).join(' ');
+                        msgContent += `<br><i>&rarr; Tools: ${tools}</i>`;
+                    }
+                    return msgContent;
+                }).join('<br><br>');
+                content += `<div style="max-height: 200px; overflow-y: auto; background-color: #444; padding: 5px; border-radius: 3px;">${historyText}</div>`;
+            }
+
             return content;
         }
 
-        function createSubtaskTooltipContent(subtask, agentMap) {
-            let content = `<b>SubTask:</b> ${subtask.ReframedTask || subtask.Task}<br>`;
+        function createSubtaskTooltipContent(subtask, childAgent) {
+            let content = `<b>SubTask:</b><div style="max-height: 100px; overflow-y: auto; background-color: #444; padding: 5px; border-radius: 3px;">${escapeHtml(subtask.ReframedTask || subtask.Task)}</div>`;
             content += `<b>SubTask ID:</b> ${subtask.SubTaskId}<br>`;
             content += `<b>Status:</b> ${subtask.Status}<br>`;
             content += `<b>Priority:</b> ${subtask.Priority}<br>`;
@@ -308,13 +323,42 @@
                 content += `<b>Dependencies:</b> ${subtask.Dependencies.join(', ')}<br>`;
             }
             
+            if (childAgent) {
+                const chatHistory = childAgent.state.SpecializedState?.ChatHistory;
+                if (chatHistory && chatHistory.length > 0) {
+                    content += `<hr><b>Chat History:</b><br>`;
+                    const historyText = chatHistory.map(msg => {
+                        let msgContent = `<b>${msg.Role}:</b>`;
+                        if (msg.Content) {
+                            msgContent += ` ${escapeHtml(msg.Content)}`;
+                        }
+                        if (msg.ToolCalls && msg.ToolCalls.length > 0) {
+                            const tools = msg.ToolCalls.map(tc => `[${tc.FunctionName}]`).join(' ');
+                            msgContent += `<br><i>&rarr; Tools: ${tools}</i>`;
+                        }
+                        return msgContent;
+                    }).join('<br><br>');
+                    content += `<div style="max-height: 300px; overflow-y: auto; background-color: #444; padding: 5px; border-radius: 3px;">${historyText}</div>`;
+                }
+            }
+            
             return content;
         }
 
         function truncateLabel(text, maxLength) {
             // Remove markdown or special characters for cleaner labels
-            const cleanText = text.replace(/###.*?\n|\n|\*\*.*?\*\*|[^a-zA-Z0-9\s]/g, ' ').trim();
+            const cleanText = text.replace(/###.*?\n|\n|\*\*.*?\*\*|[^a-zA-Z0-9\s.,%_-]/g, ' ').trim();
             return cleanText.length > maxLength ? cleanText.substring(0, maxLength - 3) + '...' : cleanText;
+        }
+
+        function escapeHtml(text) {
+            if (typeof text !== 'string') return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
     </script>
 </body>
