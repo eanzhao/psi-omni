@@ -15,6 +15,8 @@ public class OrchestratorState
     [Id(3)] public string? ExecutionPlan { get; set; }
     [Id(4)] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     [Id(5)] public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+    [Id(6)] public List<ChatMessage> ConversationHistory { get; set; } = new();
+    [Id(7)] public bool IsInConversation { get; set; } = false;
 }
 
 [Serializable]

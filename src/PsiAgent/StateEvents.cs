@@ -48,3 +48,15 @@ public class ReceiveCallbackEvent : AgentStateLogEvent
 {
     [Id(0)] public TaskCallbackEvent TaskCallbackEvent { get; set; } = new();
 }
+
+[GenerateSerializer]
+public class UpdateOrchestratorChatEvent : AgentStateLogEvent
+{
+    [Id(0)] public List<ChatMessage> Messages { get; set; } = new();
+}
+
+[GenerateSerializer]
+public class UpdateConversationStatusEvent : AgentStateLogEvent
+{
+    [Id(0)] public bool IsInConversation { get; set; }
+}

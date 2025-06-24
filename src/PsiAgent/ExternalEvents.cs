@@ -32,4 +32,11 @@ public class TaskCallbackEvent : EventBase
     [Id(1)] public string CallId { get; set; }
     [Id(2)] public string Task { get; set; }
     [Id(3)] public ChatMessage Reply { get; set; }
+    [Id(4)] public bool IsFinal { get; set; } = true;
+}
+
+[GenerateSerializer]
+public class ContinueConversationEvent : EventBase
+{
+    [Id(0)] public string UserMessage { get; set; } = string.Empty;
 }

@@ -10,10 +10,25 @@ namespace PsiOrleans.Common.Models;
 [GenerateSerializer]
 public enum OrchestrationDecision
 {
-    CompleteTask,
+    /// <summary>
+    /// The orchestrator should wait for more subtask callbacks to complete
+    /// </summary>
     WaitForMoreCallbacks,
+
+    /// <summary>
+    /// The orchestrator has sufficient information and should complete the main task
+    /// </summary>
+    CompleteTask,
+
+    /// <summary>
+    /// The orchestrator needs to create additional subtasks to make progress
+    /// </summary>
     CreateAdditionalTasks,
-    RetryTimeouts
+    
+    /// <summary>
+    /// The orchestrator should continue the conversation with the user
+    /// </summary>
+    ContinueConversation
 }
 
 [Serializable]

@@ -72,6 +72,47 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
         await ConfirmEvents();
     }
 
+    [EventHandler]
+    public async Task HandleContinueConversationEventAsync(ContinueConversationEvent @event)
+    {
+        if (!State.Orchestrator.IsInConversation) return;
+
+        Logger.LogInformation("ContinueConversationEvent: {Message}", @event.UserMessage);
+
+        RaiseEvent(new UpdateOrchestratorChatEvent
+        {
+            Messages = new List<ChatMessage> { ChatMessage.CreateUserMessage(@event.UserMessage) }
+        });
+
+        DoAsync(async () =>
+        {
+            // TODO: Add a follow up chat handler instead of doing this.
+            var (decision, newSubTasks, reply) = await DecideNextOrchestratorActionAsync();
+            if (decision == OrchestrationDecision.CompleteTask)
+            {
+                await CompleteOrchestratorExecutionAsync(reply, isFinal: true);
+            }
+            else if (decision == OrchestrationDecision.ContinueConversation)
+            {
+                await CompleteOrchestratorExecutionAsync(reply, isFinal: false);
+            }
+            else if (decision == OrchestrationDecision.CreateAdditionalTasks)
+            {
+                if (newSubTasks.Any())
+                {
+                    RaiseEvent(new UpdateSubTasksEvent() { SubTasks = newSubTasks });
+                }
+
+                var callbackDatas = await DelegateStartableSubTasksAsync();
+                if (callbackDatas.Any())
+                {
+                    RaiseEvent(new UpdateSubTaskCallbackDatasEvent { CallbackDatas = callbackDatas });
+                }
+            }
+        });
+        await ConfirmEvents();
+    }
+
     private async Task StartSpecializedExecutionAsync()
     {
         if (State.TaskAnalysisResult.RecommendedApproach == TaskApproach.DirectExecution)
@@ -147,8 +188,18 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
         Logger.LogInformation("SpecializedRunDone");
     }
 
-    private async Task CompleteOrchestratorExecutionAsync(string reply)
+    private async Task CompleteOrchestratorExecutionAsync(string reply, bool isFinal = true)
     {
+        RaiseEvent(new UpdateOrchestratorChatEvent
+        {
+            Messages = new List<ChatMessage> { ChatMessage.CreateAssistantMessage(reply) }
+        });
+
+        if (!isFinal)
+        {
+            RaiseEvent(new UpdateConversationStatusEvent { IsInConversation = true });
+        }
+
         if (State.ParentAgentId.IsNullOrEmpty())
         {
             Logger.LogInformation("Result for task:\n\nTask: {Task}\n\nResult: {Result}", State.Task, reply);
@@ -160,10 +211,11 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
             TargetAgentId = State.ParentAgentId,
             CallId = State.CallId,
             Task = State.Task,
-            Reply = ChatMessage.CreateAssistantMessage(reply)
+            Reply = ChatMessage.CreateAssistantMessage(reply),
+            IsFinal = isFinal
         });
-        // TODO: maybe send callback to parent.
-        Logger.LogInformation("SpecializedRunDone");
+
+        Logger.LogInformation("Orchestrator execution turn complete. Final: {IsFinal}", isFinal);
     }
 
     protected override void GAgentTransitionState(AgentState state, StateLogEventBase<AgentStateLogEvent> @event)
@@ -254,6 +306,12 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     }
                 }
 
+                state.Orchestrator.ConversationHistory.AddRange(
+                    payload.CallbackDatas.Select(cbd =>
+                        ChatMessage.CreateSystemMessage(
+                            $"Delegated subtask: {cbd.Task} to agent {cbd.ChildAgentId}"))
+                );
+
                 break;
             case ReceiveCallbackEvent payload:
                 var orchestratorState = State.Orchestrator;
@@ -284,34 +342,50 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     }
                 }
 
+                state.Orchestrator.ConversationHistory.Add(
+                    ChatMessage.CreateSystemMessage(
+                        $"Received result from subtask {callback.CallId}: {callback.Reply.Content}")
+                );
+
                 DoAsync(async () =>
                 {
-                    var (decision, newSubTasks) = await AnalyzeProgressAsync();
+                    var (decision, newSubTasks, reply) = await DecideNextOrchestratorActionAsync();
                     if (decision == OrchestrationDecision.CompleteTask)
                     {
                         var result = await AggregateResultsAsync();
-                        await CompleteOrchestratorExecutionAsync(result);
+                        await CompleteOrchestratorExecutionAsync(result, isFinal: true);
+                    }
+                    else if (decision == OrchestrationDecision.ContinueConversation)
+                    {
+                        await CompleteOrchestratorExecutionAsync(reply, isFinal: false);
                     }
                     else if (decision == OrchestrationDecision.CreateAdditionalTasks)
                     {
-                        if (newSubTasks.Count == 0)
+                        if (newSubTasks.Any())
                         {
-                            var callbackDatas = await DelegateStartableSubTasksAsync();
-                            RaiseEvent(new UpdateSubTaskCallbackDatasEvent
-                            {
-                                CallbackDatas = callbackDatas
-                            });
+                            RaiseEvent(new UpdateSubTasksEvent() { SubTasks = newSubTasks });
                         }
-                        else
+
+                        var callbackDatas = await DelegateStartableSubTasksAsync();
+                        if (callbackDatas.Any())
                         {
-                            RaiseEvent(new UpdateSubTasksEvent()
-                            {
-                                SubTasks = newSubTasks
-                            });
+                            RaiseEvent(new UpdateSubTaskCallbackDatasEvent { CallbackDatas = callbackDatas });
                         }
                     }
+
+                    await ConfirmEvents();
                 });
 
+                break;
+            case UpdateOrchestratorChatEvent payload:
+                if (payload.Messages.Any())
+                {
+                    state.Orchestrator.ConversationHistory.AddRange(payload.Messages);
+                }
+
+                break;
+            case UpdateConversationStatusEvent payload:
+                state.Orchestrator.IsInConversation = payload.IsInConversation;
                 break;
         }
 
