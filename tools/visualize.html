@@ -89,28 +89,95 @@
                 return;
             }
 
-            // Initialize Vis.js data
             const nodes = new vis.DataSet();
             const edges = new vis.DataSet();
-
-            // Map to store agent details for quick lookup
             const agentMap = new Map();
+            data.forEach(agent => agentMap.set(agent.id, agent));
+
+            const subtaskToNodeIdMap = new Map();
             data.forEach(agent => {
-                agentMap.set(agent.id, agent);
+                if (agent.state.Orchestrator && agent.state.Orchestrator.CurrentSubTasks) {
+                    agent.state.Orchestrator.CurrentSubTasks.forEach(subtask => {
+                        const callback = (agent.state.Orchestrator.CompletedCallbacks || []).find(cb => cb.CallId === subtask.SubTaskId);
+                        const childAgentId = callback ? callback.ChildAgentId : null;
+                        if (childAgentId) {
+                            subtaskToNodeIdMap.set(subtask.SubTaskId, childAgentId);
+                        } else {
+                            subtaskToNodeIdMap.set(subtask.SubTaskId, subtask.SubTaskId);
+                        }
+                    });
+                }
             });
 
-            // Process all agents recursively by depth
             const processedNodes = new Set();
-            const processedEdges = new Set();
+            data.forEach(agent => {
+                if (!processedNodes.has(agent.id)) {
+                    nodes.add({
+                        id: agent.id,
+                        label: truncateLabel(agent.state.Task, 25),
+                        shape: 'box',
+                        color: getNodeColor(agent.depth),
+                        tooltipContent: createTooltipContent(agent, agentMap),
+                        widthConstraint: { maximum: 200 },
+                        heightConstraint: { minimum: 60 }
+                    });
+                    processedNodes.add(agent.id);
+                }
 
-            // Sort agents by depth to process in order
-            const sortedAgents = data.sort((a, b) => a.depth - b.depth);
-
-            sortedAgents.forEach(agent => {
-                processAgent(agent, agentMap, nodes, edges, processedNodes, processedEdges);
+                if (agent.state.Orchestrator && agent.state.Orchestrator.CurrentSubTasks) {
+                    agent.state.Orchestrator.CurrentSubTasks.forEach(subtask => {
+                        const subtaskId = subtask.SubTaskId;
+                        const representativeNodeId = subtaskToNodeIdMap.get(subtaskId);
+                        
+                        if (representativeNodeId === subtaskId && !processedNodes.has(subtaskId)) {
+                            nodes.add({
+                                id: subtaskId,
+                                label: truncateLabel(subtask.ReframedTask || subtask.Task, 25),
+                                shape: 'box',
+                                color: getNodeColor(agent.depth + 1),
+                                tooltipContent: createSubtaskTooltipContent(subtask, null),
+                                widthConstraint: { maximum: 200 },
+                                heightConstraint: { minimum: 60 }
+                            });
+                            processedNodes.add(subtaskId);
+                        }
+                    });
+                }
             });
 
-            // Create or update network
+            const processedEdges = new Set();
+            data.forEach(agent => {
+                if (agent.state.ParentAgentId && agent.state.ParentAgentId !== '') {
+                    const edgeId = `${agent.state.ParentAgentId}-${agent.id}`;
+                    if (!processedEdges.has(edgeId)) {
+                        edges.add({ from: agent.state.ParentAgentId, to: agent.id, arrows: 'to', color: '#007BFF', width: 2 });
+                        processedEdges.add(edgeId);
+                    }
+                }
+
+                if (agent.state.Orchestrator && agent.state.Orchestrator.CurrentSubTasks) {
+                    agent.state.Orchestrator.CurrentSubTasks.forEach(subtask => {
+                        const subtaskId = subtask.SubTaskId;
+                        const toNodeId = subtaskToNodeIdMap.get(subtaskId);
+
+                        const subtaskEdgeId = `${agent.id}-${toNodeId}`;
+                        if (toNodeId && !processedEdges.has(subtaskEdgeId)) {
+                            edges.add({ from: agent.id, to: toNodeId, arrows: 'to', color: '#28a745', width: 2 });
+                            processedEdges.add(subtaskEdgeId);
+                        }
+
+                        Object.keys(subtask.DependencyResults || {}).forEach(depSubTaskId => {
+                            const fromNodeId = subtaskToNodeIdMap.get(depSubTaskId);
+                            const depEdgeId = `${fromNodeId}-${toNodeId}`;
+                            if (fromNodeId && toNodeId && !processedEdges.has(depEdgeId)) {
+                                edges.add({ from: fromNodeId, to: toNodeId, arrows: 'to', dashes: true, color: '#FF6200', width: 1 });
+                                processedEdges.add(depEdgeId);
+                            }
+                        });
+                    });
+                }
+            });
+
             const container = document.getElementById('taskGraph');
             const visData = { nodes, edges };
             const options = {
@@ -147,7 +214,6 @@
             }
             network = new vis.Network(container, visData, options);
 
-            // Custom tooltip handling
             network.on('hoverNode', function(params) {
                 const node = nodes.get(params.node);
                 tooltip.innerHTML = node.tooltipContent;
@@ -159,103 +225,6 @@
             network.on('blurNode', function() {
                 tooltip.style.display = 'none';
             });
-        }
-
-        function processAgent(agent, agentMap, nodes, edges, processedNodes, processedEdges) {
-            const agentId = agent.id;
-            
-            // Skip if already processed
-            if (processedNodes.has(agentId)) {
-                return;
-            }
-            processedNodes.add(agentId);
-
-            // Add the agent node
-            const nodeColor = getNodeColor(agent.depth);
-            const nodeLabel = truncateLabel(agent.state.Task, 25);
-            
-            nodes.add({
-                id: agentId,
-                label: nodeLabel,
-                shape: 'box',
-                color: nodeColor,
-                tooltipContent: createTooltipContent(agent, agentMap),
-                widthConstraint: { maximum: 200 },
-                heightConstraint: { minimum: 60 }
-            });
-
-            // Process parent relationship
-            if (agent.state.ParentAgentId && agent.state.ParentAgentId !== '') {
-                const edgeId = `${agent.state.ParentAgentId}-${agentId}`;
-                if (!processedEdges.has(edgeId)) {
-                    edges.add({
-                        from: agent.state.ParentAgentId,
-                        to: agentId,
-                        arrows: 'to',
-                        dashes: false,
-                        color: '#007BFF',
-                        width: 2
-                    });
-                    processedEdges.add(edgeId);
-                }
-            }
-
-            // Process subtasks if this agent has them
-            if (agent.state.Orchestrator && agent.state.Orchestrator.CurrentSubTasks) {
-                agent.state.Orchestrator.CurrentSubTasks.forEach(subtask => {
-                    const callback = (agent.state.Orchestrator.CompletedCallbacks || []).find(cb => cb.CallId === subtask.SubTaskId);
-                    const childAgentId = callback ? callback.ChildAgentId : null;
-                    const childAgent = childAgentId ? agentMap.get(childAgentId) : null;
-
-                    // Add subtask node
-                    const subtaskId = subtask.SubTaskId;
-                    if (!processedNodes.has(subtaskId)) {
-                        const subtaskColor = getNodeColor(agent.depth + 1);
-                        const subtaskLabel = truncateLabel(subtask.ReframedTask || subtask.Task, 25);
-                        
-                        nodes.add({
-                            id: subtaskId,
-                            label: subtaskLabel,
-                            shape: 'box',
-                            color: subtaskColor,
-                            tooltipContent: createSubtaskTooltipContent(subtask, childAgent),
-                            widthConstraint: { maximum: 200 },
-                            heightConstraint: { minimum: 60 }
-                        });
-                        processedNodes.add(subtaskId);
-                    }
-
-                    // Add subtask edge
-                    const subtaskEdgeId = `${agentId}-${subtaskId}`;
-                    if (!processedEdges.has(subtaskEdgeId)) {
-                        edges.add({
-                            from: agentId,
-                            to: subtaskId,
-                            arrows: 'to',
-                            dashes: false,
-                            color: '#28a745',
-                            width: 2
-                        });
-                        processedEdges.add(subtaskEdgeId);
-                    }
-
-                    // Process dependencies
-                    Object.keys(subtask.DependencyResults || {}).forEach(depSubTaskId => {
-                        const depEdgeId = `${depSubTaskId}-${subtaskId}`;
-                        if (!processedEdges.has(depEdgeId)) {
-                            edges.add({
-                                from: depSubTaskId,
-                                to: subtaskId,
-                                arrows: 'to',
-                                dashes: true,
-                                color: '#FF6200',
-                                width: 1
-                            });
-                            processedEdges.add(depEdgeId);
-                        }
-                    });
-                });
-            }
         }
 
         function getNodeColor(depth) {
