@@ -53,6 +53,7 @@ public class ReceiveCallbackEvent : AgentStateLogEvent
 public class UpdateOrchestratorChatEvent : AgentStateLogEvent
 {
     [Id(0)] public List<ChatMessage> Messages { get; set; } = new();
+    [Id(1)] public bool IsFinal { get; set; }
 }
 
 [GenerateSerializer]

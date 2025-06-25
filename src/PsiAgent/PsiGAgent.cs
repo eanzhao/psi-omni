@@ -84,32 +84,6 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
             Messages = new List<ChatMessage> { ChatMessage.CreateUserMessage(@event.UserMessage) }
         });
 
-        DoAsync(async () =>
-        {
-            // TODO: Add a follow up chat handler instead of doing this.
-            var (decision, newSubTasks, reply) = await DecideNextOrchestratorActionAsync();
-            if (decision == OrchestrationDecision.CompleteTask)
-            {
-                await CompleteOrchestratorExecutionAsync(reply, isFinal: true);
-            }
-            else if (decision == OrchestrationDecision.ContinueConversation)
-            {
-                await CompleteOrchestratorExecutionAsync(reply, isFinal: false);
-            }
-            else if (decision == OrchestrationDecision.CreateAdditionalTasks)
-            {
-                if (newSubTasks.Any())
-                {
-                    RaiseEvent(new UpdateSubTasksEvent() { SubTasks = newSubTasks });
-                }
-
-                var callbackDatas = await DelegateStartableSubTasksAsync();
-                if (callbackDatas.Any())
-                {
-                    RaiseEvent(new UpdateSubTaskCallbackDatasEvent { CallbackDatas = callbackDatas });
-                }
-            }
-        });
         await ConfirmEvents();
     }
 
@@ -192,13 +166,17 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
     {
         RaiseEvent(new UpdateOrchestratorChatEvent
         {
-            Messages = new List<ChatMessage> { ChatMessage.CreateAssistantMessage(reply) }
+            Messages = new List<ChatMessage>
+            {
+                ChatMessage.CreateAssistantMessage(reply),
+            },
+            IsFinal = isFinal
         });
-
-        if (!isFinal)
-        {
-            RaiseEvent(new UpdateConversationStatusEvent { IsInConversation = true });
-        }
+        //
+        // if (!isFinal)
+        // {
+        //     RaiseEvent(new UpdateConversationStatusEvent { IsInConversation = true });
+        // }
 
         if (State.ParentAgentId.IsNullOrEmpty())
         {
@@ -282,6 +260,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                 state.Orchestrator.LastUpdated = DateTime.UtcNow;
                 state.Orchestrator.CurrentSubTasks.AddRange(payload.SubTasks);
                 state.Orchestrator.ExecutionPlan = string.Join("\n", payload.SubTasks.Select(st => $"- {st.Task}"));
+                state.Orchestrator.IsInConversation = false;
 
                 DoAsync(async () =>
                 {
@@ -349,31 +328,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
 
                 DoAsync(async () =>
                 {
-                    var (decision, newSubTasks, reply) = await DecideNextOrchestratorActionAsync();
-                    if (decision == OrchestrationDecision.CompleteTask)
-                    {
-                        var result = await AggregateResultsAsync();
-                        await CompleteOrchestratorExecutionAsync(result, isFinal: true);
-                    }
-                    else if (decision == OrchestrationDecision.ContinueConversation)
-                    {
-                        await CompleteOrchestratorExecutionAsync(reply, isFinal: false);
-                    }
-                    else if (decision == OrchestrationDecision.CreateAdditionalTasks)
-                    {
-                        if (newSubTasks.Any())
-                        {
-                            RaiseEvent(new UpdateSubTasksEvent() { SubTasks = newSubTasks });
-                        }
-
-                        var callbackDatas = await DelegateStartableSubTasksAsync();
-                        if (callbackDatas.Any())
-                        {
-                            RaiseEvent(new UpdateSubTaskCallbackDatasEvent { CallbackDatas = callbackDatas });
-                        }
-                    }
-
-                    await ConfirmEvents();
+                    await ProgressAsync();
                 });
 
                 break;
@@ -383,15 +338,56 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     state.Orchestrator.ConversationHistory.AddRange(payload.Messages);
                 }
 
+                if (payload.Messages.Any() && payload.IsFinal)
+                {
+                    state.Orchestrator.IsInConversation = true;
+                }
+                else
+                {
+                    DoAsync(async () =>
+                    {
+                        await ProgressAsync();
+                    });
+                }
+
                 break;
-            case UpdateConversationStatusEvent payload:
-                state.Orchestrator.IsInConversation = payload.IsInConversation;
-                break;
+            // case UpdateConversationStatusEvent payload:
+            //     state.Orchestrator.IsInConversation = payload.IsInConversation;
+            //     break;
         }
 
         base.GAgentTransitionState(state, @event);
     }
 
+    private async Task ProgressAsync()
+    {
+        var (decision, newSubTasks, reply) = await DecideNextOrchestratorActionAsync();
+        if (decision == OrchestrationDecision.CompleteTask)
+        {
+            var result = await AggregateResultsAsync();
+            await CompleteOrchestratorExecutionAsync(result, isFinal: true);
+        }
+        else if (decision == OrchestrationDecision.ContinueConversation)
+        {
+            await CompleteOrchestratorExecutionAsync(reply, isFinal: false);
+        }
+        else if (decision == OrchestrationDecision.CreateAdditionalTasks)
+        {
+            if (newSubTasks.Any())
+            {
+                RaiseEvent(new UpdateSubTasksEvent() { SubTasks = newSubTasks });
+            }
+
+            var callbackDatas = await DelegateStartableSubTasksAsync();
+            if (callbackDatas.Any())
+            {
+                RaiseEvent(new UpdateSubTaskCallbackDatasEvent { CallbackDatas = callbackDatas });
+            }
+        }
+
+        await ConfirmEvents();
+    }
+    
     /// <summary>
     /// Schedules a one-time execution of HandleTaskSetEventAsync(new TaskSet()) using Orleans RegisterTimer.
     /// This ensures the event is triggered safely within the Grain context, avoiding thread-safety issues.

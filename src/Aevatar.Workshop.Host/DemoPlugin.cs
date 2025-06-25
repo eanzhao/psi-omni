@@ -15,6 +15,9 @@ public static class DemoPlugin
     [KernelFunction("GetNYGDP2024")]
     public static Task<double> GetNYGDP2024Async()
         => Task.FromResult(2200000.0); // 单位：百万美元（示例数据）
+    [KernelFunction("GetCAGDP2024")]
+    public static Task<double> GetCAGDP2024Async()
+        => Task.FromResult(4100000.0); // 单位：百万美元（示例数据）
 
     [KernelFunction("CalculatePercentage")]
     public static Task<double> CalculatePercentageAsync(double part, double whole)

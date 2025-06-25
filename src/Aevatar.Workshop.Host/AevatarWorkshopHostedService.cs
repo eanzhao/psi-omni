@@ -39,6 +39,8 @@ public class AevatarWorkshopHostedService : IHostedService
                 //     "Get US GDP for 2024"),
                 // KernelFunctionFactory.CreateFromMethod(() => DemoPlugin.GetNYGDP2024Async(), "GetNYGDP2024",
                 //     "Get New York GDP for 2024"),
+                // KernelFunctionFactory.CreateFromMethod(() => DemoPlugin.GetCAGDP2024Async(), "GetCAGDP2024",
+                //     "Get California GDP for 2024"),
                 KernelFunctionFactory.CreateFromMethod(
                     (double part, double whole) => DemoPlugin.CalculatePercentageAsync(part, whole),
                     "CalculatePercentage", "Calculate percentage of part over whole")
