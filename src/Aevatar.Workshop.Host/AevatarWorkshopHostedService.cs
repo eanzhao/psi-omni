@@ -35,12 +35,14 @@ public class AevatarWorkshopHostedService : IHostedService
             {
                 KernelFunctionFactory.CreateFromMethod((int a, int b) => DemoPlugin.AddNumbersAsync(a, b), "AddNumbers",
                     "Add two numbers"),
-                // KernelFunctionFactory.CreateFromMethod(() => DemoPlugin.GetUSGDP2024Async(), "GetUSGDP2024",
-                //     "Get US GDP for 2024"),
                 // KernelFunctionFactory.CreateFromMethod(() => DemoPlugin.GetNYGDP2024Async(), "GetNYGDP2024",
                 //     "Get New York GDP for 2024"),
                 // KernelFunctionFactory.CreateFromMethod(() => DemoPlugin.GetCAGDP2024Async(), "GetCAGDP2024",
                 //     "Get California GDP for 2024"),
+                KernelFunctionFactory.CreateFromMethod(() => DemoPlugin.GetUSGDP2024Async(), "GetUSGDP2024",
+                    "Get US GDP for 2024"),
+                KernelFunctionFactory.CreateFromMethod((string stateCode) => DemoPlugin.GetStateGDP2024Async(stateCode), "GetStateGDP2024",
+                    "Get GDP for a US state in 2024 by state code (e.g., 'NY', 'CA')"),
                 KernelFunctionFactory.CreateFromMethod(
                     (double part, double whole) => DemoPlugin.CalculatePercentageAsync(part, whole),
                     "CalculatePercentage", "Calculate percentage of part over whole")
@@ -52,10 +54,10 @@ public class AevatarWorkshopHostedService : IHostedService
             // functionRegistry.RegisterFunction("GetNYGDP2024", demoPlugin["GetNYGDP2024"]);
             functionRegistry.RegisterFunction("CalculatePercentage", demoPlugin["CalculatePercentage"]);
 
-            var tavilyTextSearch = GetTavilyTextSearch();
-            functionRegistry.RegisterPlugin("TavilyWebSearch",
-                tavilyTextSearch.CreateWithGetTextSearchResults("TavilyWebSearch",
-                    "Search for web content using Tavily"));
+            // var tavilyTextSearch = GetTavilyTextSearch();
+            // functionRegistry.RegisterPlugin("TavilyWebSearch",
+            //     tavilyTextSearch.CreateWithGetTextSearchResults("TavilyWebSearch",
+            //         "Search for web content using Tavily"));
         }
     }
 

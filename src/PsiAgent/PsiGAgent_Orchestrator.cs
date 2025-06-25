@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using PsiOrleans.Common.Models;
+using Aevatar.Core.Abstractions;
 
 namespace PsiAgent;
 
@@ -22,26 +23,177 @@ public partial class PsiGAgent
         return callbackDatas;
     }
 
+    private string? GetAvailableChildAgentId()
+    {
+        // Collect all child agent IDs assigned to subtasks
+        var allAssigned = State.Orchestrator.CurrentSubTasks
+            .Where(st => !string.IsNullOrEmpty(st.ChildAgentId))
+            .Select(st => st.ChildAgentId)
+            .Distinct()
+            .ToList();
+
+        // Find agents that are not currently assigned to any Pending/Delegated subtask
+        var busyAgents = State.Orchestrator.CurrentSubTasks
+            .Where(st => (st.Status == SubTaskStatus.Pending || st.Status == SubTaskStatus.Delegated) && !string.IsNullOrEmpty(st.ChildAgentId))
+            .Select(st => st.ChildAgentId)
+            .Distinct()
+            .ToHashSet();
+
+        var idleAgents = allAssigned.Where(id => !busyAgents.Contains(id)).ToList();
+        return idleAgents.FirstOrDefault();
+    }
+
+    private class ToolInfo
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+
+    private class AgentProfile
+    {
+        public string AgentId { get; set; } = string.Empty;
+        public string LastTask { get; set; } = string.Empty;
+        public List<ToolInfo> RequiredTools { get; set; } = new();
+        public AgentRole Role { get; set; }
+        public string? ModelId { get; set; }
+        public string? LastReframedTask { get; set; }
+    }
+
+    private List<AgentProfile> CollectAgentProfiles()
+    {
+        var profiles = new List<AgentProfile>();
+        var registry = _kernelFactory.FunctionRegistry;
+        var grouped = State.Orchestrator.CurrentSubTasks
+            .Where(st => !string.IsNullOrEmpty(st.ChildAgentId))
+            .GroupBy(st => st.ChildAgentId!);
+        foreach (var group in grouped)
+        {
+            var lastTask = group.OrderByDescending(st => st.Status == SubTaskStatus.Completed ? 1 : 0).First();
+            var toolInfos = new List<ToolInfo>();
+            if (registry != null)
+            {
+                foreach (var toolName in lastTask.RequiredTools)
+                {
+                    var func = registry.GetToolByQualifiedName(toolName);
+                    var desc = func?.Description ?? "";
+                    toolInfos.Add(new ToolInfo { Name = toolName, Description = desc });
+                }
+            }
+            else
+            {
+                foreach (var toolName in lastTask.RequiredTools)
+                {
+                    toolInfos.Add(new ToolInfo { Name = toolName, Description = "" });
+                }
+            }
+            profiles.Add(new AgentProfile
+            {
+                AgentId = group.Key!,
+                LastTask = lastTask.Task,
+                RequiredTools = toolInfos,
+                Role = lastTask.SuggestedRole,
+                ModelId = State.Configuration?.Model?.ModelId,
+                LastReframedTask = lastTask.ReframedTask
+            });
+        }
+        return profiles;
+    }
+
+    private string BuildAgentSelectionPrompt(List<AgentProfile> profiles, SubTask subTask)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("You are an expert agent orchestrator. Given the following existing child agents and their capabilities, decide which agent (if any) is best suited to handle the new subtask. If none are suitable, recommend creating a new agent.");
+        sb.AppendLine();
+        sb.AppendLine("Existing child agents:");
+        foreach (var profile in profiles)
+        {
+            sb.AppendLine($"- AgentId: {profile.AgentId}");
+            sb.AppendLine($"  LastTask: {profile.LastTask}");
+            sb.AppendLine($"  LastReframedTask: {profile.LastReframedTask}");
+            sb.AppendLine("  RequiredTools:");
+            foreach (var tool in profile.RequiredTools)
+            {
+                sb.AppendLine($"    - Name: {tool.Name}, Description: {tool.Description}");
+            }
+            sb.AppendLine($"  Role: {profile.Role}");
+            sb.AppendLine($"  ModelId: {profile.ModelId}");
+            sb.AppendLine();
+        }
+        sb.AppendLine("New subtask to assign:");
+        sb.AppendLine($"- Task: {subTask.Task}");
+        sb.AppendLine($"- RequiredTools: {string.Join(", ", subTask.RequiredTools)}");
+        sb.AppendLine($"- ReframedTask: {subTask.ReframedTask}");
+        sb.AppendLine();
+        sb.AppendLine("Respond in JSON: {\"reuse_agent_id\": \"<AgentId or null>\", \"reasoning\": \"your reasoning\"}");
+        return sb.ToString();
+    }
+
+    private async Task<string?> LLM_SelectAgentAsync(string prompt)
+    {
+        var agentConfig = State.Configuration;
+        var kernel = _kernelFactory.CreateKernel(agentConfig);
+        var chatService = kernel.GetRequiredService<IChatCompletionService>();
+        var result = await chatService.GetChatMessageContentAsync(prompt);
+        var content = result.Content ?? "";
+        try
+        {
+            var jsonStart = content.IndexOf('{');
+            var jsonEnd = content.LastIndexOf('}');
+            if (jsonStart != -1 && jsonEnd != -1)
+            {
+                content = content.Substring(jsonStart, jsonEnd - jsonStart + 1);
+            }
+            var doc = System.Text.Json.JsonDocument.Parse(content);
+            if (doc.RootElement.TryGetProperty("reuse_agent_id", out var idProp))
+            {
+                var id = idProp.GetString();
+                return string.IsNullOrEmpty(id) || id == "null" ? null : id;
+            }
+        }
+        catch { /* fallback: no reuse */ }
+        return null;
+    }
+
     private async Task<CallbackData> CreateNewAgentAsync(SubTask subTask)
     {
         var callId = subTask.SubTaskId;
-        var child = await _gAgentFactory.GetGAgentAsync("psi", "psi");
-        await RegisterAsync(child);
-        var config = new AgentConfiguration()
+        var profiles = CollectAgentProfiles();
+        var prompt = BuildAgentSelectionPrompt(profiles, subTask);
+        var recommendedAgentId = await LLM_SelectAgentAsync(prompt);
+        IGAgent child;
+        var isReuse = false;
+        if (!string.IsNullOrEmpty(recommendedAgentId))
         {
-            Model = State.Configuration.Model
-        };
+            // Reuse existing agent
+            child = await _gAgentFactory.GetGAgentAsync(Orleans.Runtime.GrainId.Parse(recommendedAgentId));
+            isReuse = true;
+            Logger.LogInformation($"LLM recommends reusing child agent {recommendedAgentId} for subtask {callId}");
+        }
+        else
+        {
+            // Create new agent
+            child = await _gAgentFactory.GetGAgentAsync("psi", "psi");
+            Logger.LogInformation($"LLM recommends creating new child agent for subtask {callId}");
+            await RegisterAsync(child);
+            var config = new AgentConfiguration()
+            {
+                Model = State.Configuration.Model
+            };
+            await PublishAsync(child.GetGrainId(), new SendConfigEvent
+            {
+                Configuration = config,
+                ParenteAgentId = State.AgentId
+            });
+        }
+
         var taskDescription = await PrepareTaskWithDependencyContextAsync(subTask);
-        await PublishAsync(child.GetGrainId(), new SendConfigEvent
-        {
-            Configuration = config,
-            ParenteAgentId = State.AgentId
-        });
         await PublishAsync(child.GetGrainId(), new SendTaskEvent
         {
             CallId = callId,
             Task = taskDescription
         });
+        // Update subTask's ChildAgentId
+        subTask.ChildAgentId = child.GetGrainId().ToString();
         return new CallbackData
         {
             CallId = callId,
