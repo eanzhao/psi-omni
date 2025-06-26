@@ -1,8 +1,6 @@
 using PsiOrleans.Common.Models;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel;
-using System.Reflection;
 using ChatMessage = PsiOrleans.Common.Models.ChatMessage;
 using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 using System.Text.Json;
@@ -78,7 +76,7 @@ namespace PsiOrleans.Common.Tests
             Assert.NotNull(result.Items);
             
             // Count the number of FunctionCallContent items
-            int functionCallCount = 0;
+            var functionCallCount = 0;
             foreach (var item in result.Items)
             {
                 if (item is FunctionCallContent)
@@ -90,8 +88,8 @@ namespace PsiOrleans.Common.Tests
             Assert.Equal(2, functionCallCount);
             
             // Verify function call names
-            bool foundFunc1 = false;
-            bool foundFunc2 = false;
+            var foundFunc1 = false;
+            var foundFunc2 = false;
             
             foreach (var item in result.Items)
             {
@@ -193,58 +191,39 @@ namespace PsiOrleans.Common.Tests
         }
 
         [Fact]
-        public void ConvertChatMessage_WithToolCalls_ReturnsOpenAIChatMessageContent()
+        public void ConvertFromSemanticKernelMessage_WithToolCalls_ConvertsCorrectly()
         {
             // Arrange
-            var toolCalls = new List<ToolCall>
+            var kernelArgs = new KernelArguments { { "location", "Boston" } };
+            var items = new ChatMessageContentItemCollection
             {
-                new ToolCall { FunctionName = "search", FunctionArguments = "{\"q\":\"test\"}" }
+                new TextContent("Assistant message with tool call."),
+                new FunctionCallContent("get_weather", arguments: kernelArgs)
             };
-            var chatMessage = new ChatMessage
-            {
-                Role = "assistant",
-                Content = "Tool call message.",
-                ToolCalls = toolCalls
-            };
+            var skMessage = new ChatMessageContent(AuthorRole.Assistant, items, metadata: new Dictionary<string, object?> { { "test", "value" } });
+
+#pragma warning disable SKEXP0001
+            skMessage.AuthorName = "TestAssistant";
+#pragma warning restore SKEXP0001
 
             // Act
-            var result = ChatMessageConverter.ToSemanticKernelMessage(chatMessage);
+            var result = ChatMessageConverter.FromSemanticKernelMessage(skMessage);
 
             // Assert
             Assert.NotNull(result);
-            
-            // Output the reflection status and last error for debugging
-            Console.WriteLine($"Reflection succeeded: {ChatMessageConverter.ReflectionSucceeded}");
-            Console.WriteLine($"Last error: {ChatMessageConverter.LastError}");
-            
-            // Check if the result has tool calls by examining the Items collection
-            Assert.NotNull(result.Items);
-            bool hasFunctionCall = false;
-            foreach (var item in result.Items)
-            {
-                if (item is FunctionCallContent)
-                {
-                    hasFunctionCall = true;
-                    break;
-                }
-            }
-            Assert.True(hasFunctionCall, "Message should contain function calls");
-            
-            // Verify the properties are set correctly
-            Assert.Equal(AuthorRole.Assistant, result.Role);
-            Assert.Equal("Tool call message.", result.Content);
-            
-            // If reflection succeeded, check the type
-            if (ChatMessageConverter.ReflectionSucceeded)
-            {
-                var resultType = result.GetType();
-                Assert.Equal("Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent", resultType.FullName);
-            }
-            else
-            {
-                // If reflection failed, we should still have a valid ChatMessageContent
-                Assert.IsType<ChatMessageContent>(result);
-            }
+            Assert.Equal("assistant", result.Role);
+            Assert.Equal("TestAssistant", result.Name);
+            Assert.Equal("Assistant message with tool call.", result.Content);
+            Assert.NotNull(result.Metadata);
+            Assert.True(result.Metadata.ContainsKey("test"));
+            Assert.Equal("value", result.Metadata["test"]);
+            Assert.NotNull(result.ToolCalls);
+            Assert.Single(result.ToolCalls);
+            Assert.Equal("get_weather", result.ToolCalls[0].FunctionName);
+
+            var resultArgs = JsonSerializer.Deserialize<Dictionary<string, object>>(result.ToolCalls[0].FunctionArguments);
+            Assert.NotNull(resultArgs);
+            Assert.Equal("Boston", resultArgs["location"].ToString());
         }
     }
 }
