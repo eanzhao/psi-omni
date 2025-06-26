@@ -90,9 +90,6 @@ public static class ChatMessageConverter
                 items.Add(new TextContent(message.Content));
             }
             
-            // Create a list to store custom tool calls
-            var toolCalls = new List<CustomChatToolCall>();
-            
             // Add tool calls
             foreach (var toolCall in message.ToolCalls)
             {
@@ -124,29 +121,71 @@ public static class ChatMessageConverter
                     id: Guid.NewGuid().ToString()
                 );
                 items.Add(functionCallContent);
-                
-                // Create custom tool call
-                var customToolCall = new CustomChatToolCall(
-                    Guid.NewGuid().ToString(), 
-                    toolCall.FunctionName, 
-                    toolCall.FunctionArguments
-                );
-                toolCalls.Add(customToolCall);
             }
             
-            // Try to create an OpenAIChatMessageContent
-            var openAiMessage = CreateOpenAIChatMessageContent(role, message.Content, toolCalls, metadata);
-            if (openAiMessage != null)
+            // Try to create an OpenAIChatMessageContent using the official API if available
+            try
             {
-                // Set the author name if provided
-                #pragma warning disable SKEXP0001
-                if (!string.IsNullOrEmpty(message.Name))
+                // Try to use the OpenAIChatMessageContent class directly
+                // First, check if we can use the ChatCompletionWithData class
+                var chatCompletionWithDataType = typeof(OpenAIChatMessageContent).Assembly.GetType("Microsoft.SemanticKernel.Connectors.OpenAI.ChatCompletionWithData");
+                if (chatCompletionWithDataType != null)
                 {
-                    openAiMessage.AuthorName = message.Name;
+                    LastError = "Found ChatCompletionWithData type";
+                    
+                    // Try to use the OpenAIChatMessageContent constructor that takes items
+                    var constructor = typeof(OpenAIChatMessageContent).GetConstructor(
+                        BindingFlags.Public | BindingFlags.Instance,
+                        null,
+                        new[] { typeof(AuthorRole), typeof(ChatMessageContentItemCollection), typeof(string), typeof(IReadOnlyDictionary<string, object>) },
+                        null);
+                    
+                    if (constructor != null)
+                    {
+                        LastError = "Found public constructor for OpenAIChatMessageContent";
+                        var openAiMessageFromPublicCtor = (OpenAIChatMessageContent)constructor.Invoke(new object[] { 
+                            role, 
+                            items,
+                            string.Empty,
+                            metadata 
+                        });
+                        
+                        // Set the author name if provided
+                        #pragma warning disable SKEXP0001
+                        if (!string.IsNullOrEmpty(message.Name))
+                        {
+                            openAiMessageFromPublicCtor.AuthorName = message.Name;
+                        }
+                        #pragma warning restore SKEXP0001
+                        
+                        ReflectionSucceeded = true;
+                        LastError = "Successfully created OpenAIChatMessageContent using public constructor";
+                        return openAiMessageFromPublicCtor;
+                    }
+                    else
+                    {
+                        LastError = "Public constructor for OpenAIChatMessageContent not found";
+                    }
                 }
-                #pragma warning restore SKEXP0001
                 
-                return openAiMessage;
+                // Try the reflection-based approach as fallback
+                var openAiMessageFromReflection = CreateOpenAIChatMessageContent(role, message.Content, message.ToolCalls, metadata);
+                if (openAiMessageFromReflection != null)
+                {
+                    // Set the author name if provided
+                    #pragma warning disable SKEXP0001
+                    if (!string.IsNullOrEmpty(message.Name))
+                    {
+                        openAiMessageFromReflection.AuthorName = message.Name;
+                    }
+                    #pragma warning restore SKEXP0001
+                    
+                    return openAiMessageFromReflection;
+                }
+            }
+            catch (Exception ex)
+            {
+                LastError = $"Exception trying to create OpenAIChatMessageContent: {ex.Message}";
             }
             
             // Fallback to regular ChatMessageContent if OpenAIChatMessageContent creation fails
@@ -197,7 +236,7 @@ public static class ChatMessageConverter
     private static ChatMessageContent? CreateOpenAIChatMessageContent(
         AuthorRole role, 
         string? content, 
-        List<CustomChatToolCall> toolCalls, 
+        List<ToolCall> toolCalls, 
         Dictionary<string, object?> metadata)
     {
         try
@@ -210,20 +249,97 @@ public static class ChatMessageConverter
             var openAiMessageType = typeof(OpenAIChatMessageContent);
             LastError = $"Type found: {openAiMessageType.FullName}";
             
-            // Get the FunctionToolCall type
-            var functionToolCallType = typeof(OpenAIChatMessageContent).Assembly.GetType("Microsoft.SemanticKernel.Connectors.OpenAI.FunctionToolCall");
-            if (functionToolCallType == null)
+            // Try to find the ChatToolCall type (new approach)
+            var chatToolCallType = typeof(OpenAIChatMessageContent).Assembly.GetType("Microsoft.SemanticKernel.Connectors.OpenAI.ChatToolCall");
+            if (chatToolCallType != null)
+            {
+                LastError = $"ChatToolCall type found: {chatToolCallType.FullName}";
+                
+                // Try to find the FunctionToolCall type as a nested type of ChatToolCall
+                var functionToolCallType = chatToolCallType.GetNestedType("FunctionToolCall");
+                if (functionToolCallType != null)
+                {
+                    LastError = $"FunctionToolCall nested type found: {functionToolCallType.FullName}";
+                    
+                    // Convert our tool calls to the internal FunctionToolCall type
+                    var convertedToolCalls = new List<object>();
+                    foreach (var toolCall in toolCalls)
+                    {
+                        var toolCallConstructor = functionToolCallType.GetConstructor(
+                            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, 
+                            null, 
+                            new[] { typeof(string), typeof(string), typeof(string) }, 
+                            null);
+                            
+                        if (toolCallConstructor == null)
+                        {
+                            LastError = "FunctionToolCall constructor not found";
+                            continue;
+                        }
+                        
+                        var internalToolCall = toolCallConstructor.Invoke(new object[] { 
+                            Guid.NewGuid().ToString(), 
+                            toolCall.FunctionName, 
+                            toolCall.FunctionArguments 
+                        });
+                        
+                        convertedToolCalls.Add(internalToolCall);
+                    }
+                    
+                    if (convertedToolCalls.Count == 0)
+                    {
+                        LastError = "No tool calls could be converted";
+                        return null;
+                    }
+                    
+                    // Create a list of the internal tool call type
+                    var toolCallsArray = Array.CreateInstance(functionToolCallType, convertedToolCalls.Count);
+                    for (int i = 0; i < convertedToolCalls.Count; i++)
+                    {
+                        toolCallsArray.SetValue(convertedToolCalls[i], i);
+                    }
+                    
+                    // Try to find a constructor that takes a list of FunctionToolCall
+                    var messageConstructor = openAiMessageType.GetConstructor(
+                        BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, 
+                        null, 
+                        new[] { typeof(AuthorRole), typeof(string), functionToolCallType.MakeArrayType(), typeof(IReadOnlyDictionary<string, object>) }, 
+                        null);
+                        
+                    if (messageConstructor != null)
+                    {
+                        var result = (ChatMessageContent)messageConstructor.Invoke(new object[] { 
+                            role, 
+                            content ?? string.Empty, 
+                            toolCallsArray, 
+                            metadata 
+                        });
+                        
+                        ReflectionSucceeded = true;
+                        LastError = "Success using ChatToolCall.FunctionToolCall";
+                        return result;
+                    }
+                    else
+                    {
+                        LastError = "OpenAIChatMessageContent constructor not found for ChatToolCall.FunctionToolCall";
+                    }
+                }
+            }
+            
+            // Fallback to the original approach
+            var functionToolCallType2 = typeof(OpenAIChatMessageContent).Assembly.GetType("Microsoft.SemanticKernel.Connectors.OpenAI.FunctionToolCall");
+            if (functionToolCallType2 == null)
             {
                 LastError = "FunctionToolCall type not found";
                 return null;
             }
-            LastError = $"FunctionToolCall type found: {functionToolCallType.FullName}";
+            LastError = $"FunctionToolCall type found: {functionToolCallType2.FullName}";
             
             // Convert our custom tool calls to the internal FunctionToolCall type
-            var convertedToolCalls = new List<object>();
+            var convertedToolCalls2 = new List<object>();
             foreach (var toolCall in toolCalls)
             {
-                var toolCallConstructor = functionToolCallType.GetConstructor(
+                var toolCallConstructor = functionToolCallType2.GetConstructor(
                     BindingFlags.NonPublic | BindingFlags.Instance, 
                     null, 
                     new[] { typeof(string), typeof(string), typeof(string) }, 
@@ -236,31 +352,31 @@ public static class ChatMessageConverter
                 }
                 
                 var internalToolCall = toolCallConstructor.Invoke(new object[] { 
-                    toolCall.Id, 
+                    Guid.NewGuid().ToString(), 
                     toolCall.FunctionName, 
                     toolCall.FunctionArguments 
                 });
                 
-                convertedToolCalls.Add(internalToolCall);
+                convertedToolCalls2.Add(internalToolCall);
             }
             
-            if (convertedToolCalls.Count == 0)
+            if (convertedToolCalls2.Count == 0)
             {
                 LastError = "No tool calls could be converted";
                 return null;
             }
             
             // Create a new instance of OpenAIChatMessageContent using reflection
-            var messageConstructor = openAiMessageType.GetConstructor(
+            var messageConstructor2 = openAiMessageType.GetConstructor(
                 BindingFlags.NonPublic | BindingFlags.Instance, 
                 null, 
-                new[] { typeof(AuthorRole), typeof(string), typeof(IReadOnlyList<>).MakeGenericType(functionToolCallType), typeof(IReadOnlyDictionary<string, object>) }, 
+                new[] { typeof(AuthorRole), typeof(string), typeof(IReadOnlyList<>).MakeGenericType(functionToolCallType2), typeof(IReadOnlyDictionary<string, object>) }, 
                 null);
                 
-            if (messageConstructor == null)
+            if (messageConstructor2 == null)
             {
                 // Try to find available constructors
-                var availableConstructors = openAiMessageType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance);
+                var availableConstructors = openAiMessageType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
                 LastError = $"OpenAIChatMessageContent constructor not found. Available constructors: {availableConstructors.Length}";
                 
                 foreach (var ctor in availableConstructors)
@@ -273,22 +389,22 @@ public static class ChatMessageConverter
             }
             
             // Create an array of the internal tool call type
-            var toolCallsArray = Array.CreateInstance(functionToolCallType, convertedToolCalls.Count);
-            for (int i = 0; i < convertedToolCalls.Count; i++)
+            var toolCallsArray2 = Array.CreateInstance(functionToolCallType2, convertedToolCalls2.Count);
+            for (int i = 0; i < convertedToolCalls2.Count; i++)
             {
-                toolCallsArray.SetValue(convertedToolCalls[i], i);
+                toolCallsArray2.SetValue(convertedToolCalls2[i], i);
             }
             
-            var result = (ChatMessageContent)messageConstructor.Invoke(new object[] { 
+            var result2 = (ChatMessageContent)messageConstructor2.Invoke(new object[] { 
                 role, 
                 content ?? string.Empty, 
-                toolCallsArray, 
+                toolCallsArray2, 
                 metadata 
             });
             
             ReflectionSucceeded = true;
-            LastError = "Success";
-            return result;
+            LastError = "Success using original approach";
+            return result2;
         }
         catch (Exception ex)
         {
