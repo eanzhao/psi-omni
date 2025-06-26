@@ -15,41 +15,46 @@ The `ChatMessageConverter` class provides functionality to convert between `PsiO
 
 ### Implementation Details
 
-The converter attempts to create `OpenAIChatMessageContent` instances when tool calls are present using the following approach:
+The converter creates `OpenAIChatMessageContent` instances for messages with tool calls using the following approach:
 
-1. First, it tries to use reflection to create `ChatToolCall` instances from the OpenAI SDK:
-   - Gets the internal function type (`InternalChatCompletionMessageToolCallFunction`)
-   - Creates instances of this internal type
-   - Creates `ChatToolCall` instances using the internal constructor
-   - Creates an `OpenAIChatMessageContent` with these tool calls
+1. It creates a `ChatMessageContentItemCollection` with:
+   - Text content (if available)
+   - Function call content items for each tool call
 
-2. If the reflection approach fails (which may happen if the internal structure of the Semantic Kernel or OpenAI SDK changes), it falls back to using the public constructor of `OpenAIChatMessageContent` that takes a `ChatMessageContentItemCollection`.
+2. It then uses the public constructor of `OpenAIChatMessageContent` that takes a `ChatMessageContentItemCollection`.
 
-3. If all approaches fail, it creates a regular `ChatMessageContent` with function calls in the items collection.
+3. If that fails, it falls back to creating a regular `ChatMessageContent` with function calls in the items collection.
 
-This implementation is designed to be robust against changes in the internal structure of the libraries it depends on, while still providing the best possible conversion between message formats.
+This implementation is simple, robust, and less likely to break with SDK updates since it uses only public APIs.
 
 ### Dependencies
 
 - Microsoft.SemanticKernel.Abstractions
 - Microsoft.SemanticKernel.Connectors.OpenAI
-- OpenAI
-
-### Note
-
-The reflection-based approach may break if the internal structure of the Semantic Kernel or OpenAI SDK changes significantly. If this happens, the converter will automatically fall back to the public API approach.
 
 ### Usage
 
 ```csharp
-// Convert from PsiOrleans.Common.Models.ChatMessage to Semantic Kernel ChatMessageContent
-var message = new ChatMessage("user", "Hello, world!");
-var skMessage = ChatMessageConverter.ToSemanticKernelMessage(message);
+// Create a ChatMessage with tool calls
+var chatMessage = new ChatMessage
+{
+    Role = "assistant",
+    Content = "I'll help you with that.",
+    ToolCalls = new List<ToolCall>
+    {
+        new ToolCall
+        {
+            FunctionName = "get_weather",
+            FunctionArguments = "{\"location\": \"New York\", \"unit\": \"celsius\"}"
+        }
+    }
+};
 
-// Use the converted message with Semantic Kernel
-var kernel = Kernel.CreateBuilder().Build();
-var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
-var result = await chatCompletionService.GetChatMessageContentsAsync(new[] { skMessage });
+// Convert to Semantic Kernel message
+var skMessage = ChatMessageConverter.ToSemanticKernelMessage(chatMessage);
+
+// The result will be an OpenAIChatMessageContent with tool calls
+// or a regular ChatMessageContent if conversion fails
 ```
 
 ## Models
