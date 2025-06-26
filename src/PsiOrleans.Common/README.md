@@ -15,15 +15,29 @@ The `ChatMessageConverter` class provides functionality to convert between `PsiO
 
 ### Implementation Details
 
-The converter attempts to create `OpenAIChatMessageContent` instances when tool calls are present, but falls back to regular `ChatMessageContent` if the reflection-based approach fails. This is necessary because `OpenAIChatMessageContent` has internal constructors that cannot be directly accessed.
+The converter attempts to create `OpenAIChatMessageContent` instances when tool calls are present using the following approach:
 
-The current implementation has the following limitations:
+1. First, it tries to use reflection to create `ChatToolCall` instances from the OpenAI SDK:
+   - Gets the internal function type (`InternalChatCompletionMessageToolCallFunction`)
+   - Creates instances of this internal type
+   - Creates `ChatToolCall` instances using the internal constructor
+   - Creates an `OpenAIChatMessageContent` with these tool calls
 
-1. **Reflection Dependency**: The code uses reflection to create instances of internal types like `FunctionToolCall` and `OpenAIChatMessageContent`. This approach may break if the internal structure of Semantic Kernel changes.
+2. If the reflection approach fails (which may happen if the internal structure of the Semantic Kernel or OpenAI SDK changes), it falls back to using the public constructor of `OpenAIChatMessageContent` that takes a `ChatMessageContentItemCollection`.
 
-2. **Limited Tool Call Support**: Only function-type tool calls are supported. Other types of tool calls (like retrieval) are not currently implemented.
+3. If all approaches fail, it creates a regular `ChatMessageContent` with function calls in the items collection.
 
-3. **Semantic Kernel Version Dependency**: The code is designed to work with Semantic Kernel 1.57.0. Changes in future versions may require updates to the converter.
+This implementation is designed to be robust against changes in the internal structure of the libraries it depends on, while still providing the best possible conversion between message formats.
+
+### Dependencies
+
+- Microsoft.SemanticKernel.Abstractions
+- Microsoft.SemanticKernel.Connectors.OpenAI
+- OpenAI
+
+### Note
+
+The reflection-based approach may break if the internal structure of the Semantic Kernel or OpenAI SDK changes significantly. If this happens, the converter will automatically fall back to the public API approach.
 
 ### Usage
 
