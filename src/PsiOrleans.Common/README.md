@@ -1,42 +1,50 @@
-# ChatMessageConverter
+# PsiOrleans.Common
 
-The `ChatMessageConverter` class provides functionality to convert between `PsiOrleans.Common.Models.ChatMessage` and Semantic Kernel message types.
+This library contains common models and interfaces for the PsiOrleans project.
 
-## Overview
+## ChatMessageConverter
 
-This implementation converts `ChatMessage` objects to Semantic Kernel's `ChatMessageContent` type, handling all the necessary conversions for role, content, metadata, and tool calls.
+The `ChatMessageConverter` class provides functionality to convert between `PsiOrleans.Common.Models.ChatMessage` and Semantic Kernel message types (`Microsoft.SemanticKernel.ChatMessageContent`).
 
-## Implementation Details
+### Features
 
-The converter uses the official Semantic Kernel API to create ChatMessageContent instances:
+- Converts role strings to `AuthorRole` enum values
+- Preserves metadata between message formats
+- Handles tool calls conversion
+- Supports author names
 
-1. Converts the role string to the appropriate `AuthorRole` enum value
-2. Creates a `ChatMessageContent` instance with the proper content and metadata
-3. Handles tool calls by creating appropriate `FunctionCallContent` items in the message's item collection
-4. Sets the author name if provided
+### Implementation Details
 
-## Usage
+The converter attempts to create `OpenAIChatMessageContent` instances when tool calls are present, but falls back to regular `ChatMessageContent` if the reflection-based approach fails. This is necessary because `OpenAIChatMessageContent` has internal constructors that cannot be directly accessed.
+
+The current implementation has the following limitations:
+
+1. **Reflection Dependency**: The code uses reflection to create instances of internal types like `FunctionToolCall` and `OpenAIChatMessageContent`. This approach may break if the internal structure of Semantic Kernel changes.
+
+2. **Limited Tool Call Support**: Only function-type tool calls are supported. Other types of tool calls (like retrieval) are not currently implemented.
+
+3. **Semantic Kernel Version Dependency**: The code is designed to work with Semantic Kernel 1.57.0. Changes in future versions may require updates to the converter.
+
+### Usage
 
 ```csharp
-// Convert a ChatMessage to a Semantic Kernel message
-var chatMessage = new ChatMessage
-{
-    Role = "user",
-    Content = "Hello, world!",
-    Name = "TestUser",
-    Metadata = new Dictionary<string, object> { { "foo", "bar" } }
-};
+// Convert from PsiOrleans.Common.Models.ChatMessage to Semantic Kernel ChatMessageContent
+var message = new ChatMessage("user", "Hello, world!");
+var skMessage = ChatMessageConverter.ToSemanticKernelMessage(message);
 
-var skMessage = ChatMessageConverter.ToSemanticKernelMessage(chatMessage);
-
-// The result will be a ChatMessageContent instance
-// with all properties properly mapped
+// Use the converted message with Semantic Kernel
+var kernel = Kernel.CreateBuilder().Build();
+var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
+var result = await chatCompletionService.GetChatMessageContentsAsync(new[] { skMessage });
 ```
 
-## Features
+## Models
 
-- Converts between role string and `AuthorRole` enum
-- Maps content and name properties
-- Preserves metadata in the message's metadata dictionary
-- Handles tool calls conversion for function arguments
-- Parses function arguments as JSON when possible 
+The library includes several model classes used throughout the PsiOrleans system:
+
+- `ChatMessage`: Represents a chat message with role, content, and optional tool calls
+- `ToolCall`: Represents a function call in a chat message
+- `AgentConfiguration`: Configuration settings for an agent
+- `AgentRole`: Defines the role of an agent in the system
+- `AgentState`: Represents the current state of an agent
+- `TaskAnalysisResult`: Contains the result of analyzing a task 
