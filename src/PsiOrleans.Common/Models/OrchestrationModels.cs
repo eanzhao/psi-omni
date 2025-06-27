@@ -69,7 +69,8 @@ public enum SubTaskStatus
     Pending,
     Delegated,
     Completed,
-    Failed
+    Failed,
+    Canceled
 }
 
 [Serializable]

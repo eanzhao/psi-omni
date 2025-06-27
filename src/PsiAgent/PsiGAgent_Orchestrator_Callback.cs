@@ -4,6 +4,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using PsiOrleans.Common.Models;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 
 namespace PsiAgent;
 
@@ -88,11 +89,27 @@ public partial class PsiGAgent
 
         var pendingSubTaskDetails = currentSubTasks
             .Where(st => st.Status == SubTaskStatus.Delegated)
-            .Select(st => $"- SubTaskId: {st.SubTaskId}, Task: {st.Task}, ChildAgentId: {st.ChildAgentId}, Status: {st.Status}, RequiredTools: [{string.Join(", ", st.RequiredTools)}], Priority: {st.Priority}, Dependencies: [{string.Join(", ", st.Dependencies)}], ReframedTask: {st.ReframedTask}")
+            .Select(st => new XElement("subtask",
+                new XElement("id", st.SubTaskId),
+                new XElement("task", st.Task),
+                new XElement("childAgentId", st.ChildAgentId),
+                new XElement("status", st.Status),
+                new XElement("requiredTools", st.RequiredTools.Select(t => new XElement("tool", t))),
+                new XElement("dependencies", st.Dependencies.Select(d => new XElement("dependency", d))),
+                new XElement("reframedTask", st.ReframedTask)
+            ).ToString())
             .ToList();
         var notStartedSubTaskDetails = currentSubTasks
             .Where(st => st.Status == SubTaskStatus.Pending)
-            .Select(st => $"- SubTaskId: {st.SubTaskId}, Task: {st.Task}, ChildAgentId: {st.ChildAgentId}, Status: {st.Status}, RequiredTools: [{string.Join(", ", st.RequiredTools)}], Priority: {st.Priority}, Dependencies: [{string.Join(", ", st.Dependencies)}], ReframedTask: {st.ReframedTask}")
+            .Select(st => new XElement("subtask",
+                new XElement("id", st.SubTaskId),
+                new XElement("task", st.Task),
+                new XElement("childAgentId", st.ChildAgentId),
+                new XElement("status", st.Status),
+                new XElement("requiredTools", st.RequiredTools.Select(t => new XElement("tool", t))),
+                new XElement("dependencies", st.Dependencies.Select(d => new XElement("dependency", d))),
+                new XElement("reframedTask", st.ReframedTask)
+            ).ToString())
             .ToList();
 
         var jsonSchema = @"{
@@ -115,7 +132,7 @@ You are an expert orchestrator analyzing the progress of a complex, multi-round 
 Original Task: {originalTask}
 
 Conversation History:
-{string.Join("\n", chatHistory.Select(m => $"{m.Role}: {m.Content}"))}
+{string.Join("\n", chatHistory.Select(m => $"<chat_message><role>{m.Role}</role><message>{m.Content}</message>"))}
 
 Subtask Progress Summary:
 - Completed: {completedSubTasks}/{totalSubTasks}
@@ -135,6 +152,7 @@ Based on the conversation and subtask progress, determine the next action.
 - If you need to wait for pending subtasks, decide to 'WAIT_FOR_MORE_CALLBACKS'.
 - If a pending or not started subtask should be canceled, decide to 'CANCEL_SUBTASK' and specify the subtask id.
 - If a follow-up message should be sent to a child agent, decide to 'FOLLOWUP_CHILD' and specify the child agent id and the follow-up message.
+- You may decide to complete the task without considering delegated tasks. In this case outstanding delegated tasks will be canceled.
 
 Respond in JSON format with your decision, reasoning, a list of any new tasks, the next reply to the user, and if relevant, the subtask id to cancel or the child agent id and follow-up message.
 " + jsonSchema;
@@ -226,6 +244,7 @@ Respond in JSON format with your decision, reasoning, a list of any new tasks, t
         //     finalDecision = OrchestrationDecision.WaitForMoreCallbacks;
         // }
 
+        UpdateSubTaskStartability(newSubTasks);
         return (finalDecision, newSubTasks, reply, analysis);
     }
 
@@ -243,7 +262,10 @@ Respond in JSON format with your decision, reasoning, a list of any new tasks, t
 
             var successfulResults = completedCallbacks
                 .Where(cb => cb.IsSuccess)
-                .Select(cb => $"Subtask: {cb.Task}\nResult: {cb.ResultMessage}")
+                .Select(cb => new XElement("completed_subtask",
+                    new XElement("task", cb.Task),
+                    new XElement("result", cb.ResultMessage)
+                ).ToString())
                 .ToList();
 
             if (!successfulResults.Any())
@@ -302,12 +324,18 @@ Your response should be well-structured and directly answer the original task.";
             return "Task execution failed - no successful subtask results available.";
         }
 
+        var resultsXml = new XElement("completed_subtasks",
+            successfulResults.Select(cb => new XElement("completed_subtask",
+                new XElement("task", cb.Task),
+                new XElement("result", cb.ResultMessage)
+            ))
+        );
+
         var fallback = $@"Task: {originalTask}
 
 Results from {successfulResults.Count} completed subtasks:
 
-{string.Join("\n\n", successfulResults.Select((cb, index) =>
-    $"{index + 1}. {cb.Task}\n   Result: {cb.ResultMessage}"))}
+{resultsXml.ToString()}
 
 Note: This is a basic aggregation due to processing limitations. Individual results are listed above.";
 

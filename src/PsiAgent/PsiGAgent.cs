@@ -100,14 +100,13 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
         {
          RaiseEvent(new UpdateSpecializedChatEvent()
          {
+             CallId = @event.CallId,
              Messages = new List<ChatMessage>()
              {
                  ChatMessage.CreateUserMessage(@event.UserMessage)
              }
          });   
         }
-        
-
     }
 
     private async Task StartSpecializedExecutionAsync()
@@ -221,6 +220,12 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
             return;
         }
 
+        DoAsync(async () =>
+        {
+            RaiseEvent(new TaskCompletedStateLogEvent());
+            await ConfirmEvents();
+        });
+        
         await PublishAsync(GrainId.Parse(State.ParentAgentId), new TaskCallbackEvent
         {
             TargetAgentId = State.ParentAgentId,
@@ -270,6 +275,8 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
             case UpdateSpecializedChatEvent payload:
                 if (payload.Messages.Any())
                 {
+                    state.Task = payload.Messages.Last().Content;
+                    state.CallId = payload.CallId;
                     state.SpecializedState.ChatHistory.AddRange(payload.Messages);
                     DoAsync(StartSpecializedExecutionAsync);
                 }
@@ -335,7 +342,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                 state.Orchestrator.ConversationHistory.AddRange(
                     payload.CallbackDatas.Select(cbd =>
                     {
-                        var msg = ChatMessage.CreateSystemMessage($"Delegated subtask: {cbd.Task} to agent {cbd.ChildAgentId}");
+                        var msg = ChatMessage.CreateAssistantMessage($"Delegated subtask: {cbd.Task} to agent {cbd.ChildAgentId}");
                         msg.ChildInteractions = new List<ChildInteraction> { new ChildInteraction { InteractionType = "TaskAssignment", ChildAgentId = cbd.ChildAgentId, CallId = cbd.CallId, Payload = cbd.Task, Timestamp = DateTime.UtcNow } };
                         return msg;
                     })
@@ -371,7 +378,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     }
                 }
 
-                var callbackMsg = ChatMessage.CreateSystemMessage($"Received result from subtask {callback.CallId}: {callback.Reply.Content}");
+                var callbackMsg = ChatMessage.CreateAssistantMessage($"Received result from subtask {callback.CallId}: {callback.Reply.Content}");
                 callbackMsg.ChildInteractions = new List<ChildInteraction> { new ChildInteraction { InteractionType = "Callback", ChildAgentId = callback.TargetAgentId, CallId = callback.CallId, Payload = callback.Reply.Content, Timestamp = DateTime.UtcNow } };
                 state.Orchestrator.ConversationHistory.Add(callbackMsg);
 
@@ -385,6 +392,11 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                 if (payload.Messages.Any())
                 {
                     state.Orchestrator.ConversationHistory.AddRange(payload.Messages);
+                    if (!payload.CallId.IsNullOrEmpty())
+                    {
+                        state.CallId = payload.CallId;
+                        state.Task = payload.Messages.Last().Content;
+                    }
                 }
 
                 if (payload.Messages.Any() && payload.IsFinal)
@@ -397,6 +409,16 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     {
                         await ProgressAsync();
                     });
+                }
+
+                break;
+            case TaskCompletedStateLogEvent payload:
+                foreach (var subTask in state.Orchestrator.CurrentSubTasks)
+                {
+                    if (subTask.Status == SubTaskStatus.Pending || subTask.Status == SubTaskStatus.Delegated)
+                    {
+                        subTask.Status = SubTaskStatus.Canceled;
+                    }
                 }
 
                 break;
@@ -441,7 +463,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
             if (subTask != null)
             {
                 subTask.Status = SubTaskStatus.Failed;
-                var cancelMsg = ChatMessage.CreateSystemMessage($"Canceled subtask: {subTask.Task} (ID: {subTask.SubTaskId})");
+                var cancelMsg = ChatMessage.CreateAssistantMessage($"Canceled subtask: {subTask.Task} (ID: {subTask.SubTaskId})");
                 cancelMsg.ChildInteractions = new List<ChildInteraction> { new ChildInteraction { InteractionType = "Cancel", ChildAgentId = subTask.ChildAgentId ?? string.Empty, CallId = subTask.SubTaskId, Payload = "Canceled by orchestrator", Timestamp = DateTime.UtcNow } };
                 State.Orchestrator.ConversationHistory.Add(cancelMsg);
                 Logger.LogInformation($"Canceled subtask {subTask.SubTaskId}");
@@ -460,7 +482,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     TargetAgentId = grainId.ToString(),
                     UserMessage = followUpMessage
                 });
-                var followUpMsg = ChatMessage.CreateSystemMessage($"Sent follow-up to child agent {childAgentId}: {followUpMessage}");
+                var followUpMsg = ChatMessage.CreateAssistantMessage($"Sent follow-up to child agent {childAgentId}: {followUpMessage}");
                 followUpMsg.ChildInteractions = new List<ChildInteraction> { new ChildInteraction { InteractionType = "FollowUp", ChildAgentId = childAgentId, Payload = followUpMessage, Timestamp = DateTime.UtcNow } };
                 State.Orchestrator.ConversationHistory.Add(followUpMsg);
                 Logger.LogInformation($"Sent follow-up to child agent {childAgentId}");

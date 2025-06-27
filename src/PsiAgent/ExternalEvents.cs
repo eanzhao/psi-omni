@@ -3,7 +3,6 @@ using PsiOrleans.Common.Models;
 
 namespace PsiAgent;
 
-
 [GenerateSerializer]
 public class PingEvent : EventBase
 {
@@ -15,7 +14,6 @@ public class SendConfigEvent : EventBase
     [Id(0)] public AgentConfiguration Configuration { get; set; }
     [Id(1)] public string ParenteAgentId { get; set; }
 }
-
 
 // TODO: Maybe merge with SendConfigEvent
 [GenerateSerializer]
@@ -40,4 +38,5 @@ public class ContinueConversationEvent : EventBase
 {
     [Id(0)] public string TargetAgentId { get; set; } = string.Empty;
     [Id(1)] public string UserMessage { get; set; } = string.Empty;
+    [Id(2)] public string CallId { get; set; } = string.Empty;
 }

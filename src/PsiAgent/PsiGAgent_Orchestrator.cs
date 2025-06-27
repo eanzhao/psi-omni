@@ -187,6 +187,7 @@ public partial class PsiGAgent
             var targetAgentId = child.GetGrainId();
             await PublishAsync(targetAgentId, new ContinueConversationEvent
             {
+                CallId = callId,
                 TargetAgentId = targetAgentId.ToString(),
                 UserMessage = taskDescription
             });

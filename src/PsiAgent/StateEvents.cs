@@ -54,16 +54,23 @@ public class UpdateOrchestratorChatEvent : AgentStateLogEvent
 {
     [Id(0)] public List<ChatMessage> Messages { get; set; } = new();
     [Id(1)] public bool IsFinal { get; set; }
+    [Id(2)] public string CallId { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]
 public class UpdateSpecializedChatEvent : AgentStateLogEvent
 {
     [Id(0)] public List<ChatMessage> Messages { get; set; } = new();
+    [Id(1)] public string CallId { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]
 public class UpdateConversationStatusEvent : AgentStateLogEvent
 {
     [Id(0)] public bool IsInConversation { get; set; }
+}
+
+[GenerateSerializer]
+public class TaskCompletedStateLogEvent : AgentStateLogEvent
+{
 }
