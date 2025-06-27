@@ -38,5 +38,6 @@ public class TaskCallbackEvent : EventBase
 [GenerateSerializer]
 public class ContinueConversationEvent : EventBase
 {
-    [Id(0)] public string UserMessage { get; set; } = string.Empty;
+    [Id(0)] public string TargetAgentId { get; set; } = string.Empty;
+    [Id(1)] public string UserMessage { get; set; } = string.Empty;
 }

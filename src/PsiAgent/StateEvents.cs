@@ -57,6 +57,12 @@ public class UpdateOrchestratorChatEvent : AgentStateLogEvent
 }
 
 [GenerateSerializer]
+public class UpdateSpecializedChatEvent : AgentStateLogEvent
+{
+    [Id(0)] public List<ChatMessage> Messages { get; set; } = new();
+}
+
+[GenerateSerializer]
 public class UpdateConversationStatusEvent : AgentStateLogEvent
 {
     [Id(0)] public bool IsInConversation { get; set; }

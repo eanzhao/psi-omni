@@ -106,13 +106,19 @@ When choosing suggestedTools for each subtask, use both the name and the descrip
         }
     }
 
-    private List<SubTask> ParseDelegationResponse(string response)
+    private List<SubTask> ParseDelegationResponse(string responseJson)
     {
         try
         {
+            var jsonStartIndex = responseJson.IndexOf('{');
+            var jsonEndIndex = responseJson.LastIndexOf('}');
+            if (jsonStartIndex != -1 && jsonEndIndex != -1)
+            {
+                responseJson = responseJson.Substring(jsonStartIndex, jsonEndIndex - jsonStartIndex + 1);
+            }
             // Try JSON parsing first
             var allIds = new Dictionary<string, string>();
-            var jsonDoc = JsonDocument.Parse(response);
+            var jsonDoc = JsonDocument.Parse(responseJson);
             if (jsonDoc.RootElement.TryGetProperty("subtasks", out var subtasksElement))
             {
                 var subTasks = new List<SubTask>();

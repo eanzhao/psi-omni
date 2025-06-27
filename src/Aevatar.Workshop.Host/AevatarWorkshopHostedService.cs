@@ -42,7 +42,7 @@ public class AevatarWorkshopHostedService : IHostedService
                 KernelFunctionFactory.CreateFromMethod(() => DemoPlugin.GetUSGDP2024Async(), "GetUSGDP2024",
                     "Get US GDP for 2024"),
                 KernelFunctionFactory.CreateFromMethod((string stateCode) => DemoPlugin.GetStateGDP2024Async(stateCode), "GetStateGDP2024",
-                    "Get GDP for a US state in 2024 by state code (e.g., 'NY', 'CA')"),
+                    "Get GDP for a US state in 2024 by state code (e.g., 'NY', 'CA'), argument is the state code"),
                 KernelFunctionFactory.CreateFromMethod(
                     (double part, double whole) => DemoPlugin.CalculatePercentageAsync(part, whole),
                     "CalculatePercentage", "Calculate percentage of part over whole")

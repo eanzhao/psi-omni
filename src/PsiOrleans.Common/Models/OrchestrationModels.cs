@@ -28,7 +28,17 @@ public enum OrchestrationDecision
     /// <summary>
     /// The orchestrator should continue the conversation with the user
     /// </summary>
-    ContinueConversation
+    ContinueConversation,
+
+    /// <summary>
+    /// The orchestrator should cancel a subtask
+    /// </summary>
+    CancelSubTask,
+
+    /// <summary>
+    /// The orchestrator should follow up with a child task
+    /// </summary>
+    FollowUpChild
 }
 
 [Serializable]

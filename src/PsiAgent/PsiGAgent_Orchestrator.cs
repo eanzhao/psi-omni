@@ -12,11 +12,12 @@ public partial class PsiGAgent
     private async Task<List<CallbackData>> DelegateStartableSubTasksAsync()
     {
         var callbackDatas = new List<CallbackData>();
+        var profiles = CollectAgentProfiles();
 
         foreach (var subTask in State.Orchestrator.CurrentSubTasks.Where(st =>
                      st is { CanStart: true, Status: SubTaskStatus.Pending }))
         {
-            var callbackData = await CreateNewAgentAsync(subTask);
+            var callbackData = await DelegateTaskAsync(subTask, profiles);
             callbackDatas.Add(callbackData);
         }
 
@@ -34,7 +35,8 @@ public partial class PsiGAgent
 
         // Find agents that are not currently assigned to any Pending/Delegated subtask
         var busyAgents = State.Orchestrator.CurrentSubTasks
-            .Where(st => (st.Status == SubTaskStatus.Pending || st.Status == SubTaskStatus.Delegated) && !string.IsNullOrEmpty(st.ChildAgentId))
+            .Where(st => (st.Status == SubTaskStatus.Pending || st.Status == SubTaskStatus.Delegated) &&
+                         !string.IsNullOrEmpty(st.ChildAgentId))
             .Select(st => st.ChildAgentId)
             .Distinct()
             .ToHashSet();
@@ -64,7 +66,7 @@ public partial class PsiGAgent
         var profiles = new List<AgentProfile>();
         var registry = _kernelFactory.FunctionRegistry;
         var grouped = State.Orchestrator.CurrentSubTasks
-            .Where(st => !string.IsNullOrEmpty(st.ChildAgentId))
+            .Where(st => !string.IsNullOrEmpty(st.ChildAgentId) && st.Status != SubTaskStatus.Pending)
             .GroupBy(st => st.ChildAgentId!);
         foreach (var group in grouped)
         {
@@ -86,6 +88,7 @@ public partial class PsiGAgent
                     toolInfos.Add(new ToolInfo { Name = toolName, Description = "" });
                 }
             }
+
             profiles.Add(new AgentProfile
             {
                 AgentId = group.Key!,
@@ -96,13 +99,15 @@ public partial class PsiGAgent
                 LastReframedTask = lastTask.ReframedTask
             });
         }
+
         return profiles;
     }
 
     private string BuildAgentSelectionPrompt(List<AgentProfile> profiles, SubTask subTask)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("You are an expert agent orchestrator. Given the following existing child agents and their capabilities, decide which agent (if any) is best suited to handle the new subtask. If none are suitable, recommend creating a new agent.");
+        sb.AppendLine(
+            "You are an expert agent orchestrator. Given the following existing child agents and their capabilities, decide which agent (if any) is best suited to handle the new subtask. If none are suitable, recommend creating a new agent.");
         sb.AppendLine();
         sb.AppendLine("Existing child agents:");
         foreach (var profile in profiles)
@@ -115,16 +120,19 @@ public partial class PsiGAgent
             {
                 sb.AppendLine($"    - Name: {tool.Name}, Description: {tool.Description}");
             }
+
             sb.AppendLine($"  Role: {profile.Role}");
             sb.AppendLine($"  ModelId: {profile.ModelId}");
             sb.AppendLine();
         }
+
         sb.AppendLine("New subtask to assign:");
         sb.AppendLine($"- Task: {subTask.Task}");
         sb.AppendLine($"- RequiredTools: {string.Join(", ", subTask.RequiredTools)}");
-        sb.AppendLine($"- ReframedTask: {subTask.ReframedTask}");
+        sb.AppendLine($"- ReframedTask: <reframed_task>{subTask.ReframedTask}</reframed_task>");
         sb.AppendLine();
-        sb.AppendLine("Respond in JSON: {\"reuse_agent_id\": \"<AgentId or null>\", \"reasoning\": \"your reasoning\"}");
+        sb.AppendLine(
+            "Respond in JSON: {\"reuse_agent_id\": \"<AgentId or null>\", \"reasoning\": \"your reasoning\"}");
         return sb.ToString();
     }
 
@@ -143,6 +151,7 @@ public partial class PsiGAgent
             {
                 content = content.Substring(jsonStart, jsonEnd - jsonStart + 1);
             }
+
             var doc = System.Text.Json.JsonDocument.Parse(content);
             if (doc.RootElement.TryGetProperty("reuse_agent_id", out var idProp))
             {
@@ -150,24 +159,46 @@ public partial class PsiGAgent
                 return string.IsNullOrEmpty(id) || id == "null" ? null : id;
             }
         }
-        catch { /* fallback: no reuse */ }
+        catch
+        {
+            /* fallback: no reuse */
+        }
+
         return null;
     }
 
-    private async Task<CallbackData> CreateNewAgentAsync(SubTask subTask)
+    private async Task<CallbackData> DelegateTaskAsync(SubTask subTask, List<AgentProfile> profiles)
     {
         var callId = subTask.SubTaskId;
-        var profiles = CollectAgentProfiles();
-        var prompt = BuildAgentSelectionPrompt(profiles, subTask);
-        var recommendedAgentId = await LLM_SelectAgentAsync(prompt);
+        var recommendedAgentId = "";
+        if (profiles.Count > 0)
+        {
+            var prompt = BuildAgentSelectionPrompt(profiles, subTask);
+            recommendedAgentId = await LLM_SelectAgentAsync(prompt);
+        }
+
         IGAgent child;
-        var isReuse = false;
         if (!string.IsNullOrEmpty(recommendedAgentId))
         {
             // Reuse existing agent
             child = await _gAgentFactory.GetGAgentAsync(Orleans.Runtime.GrainId.Parse(recommendedAgentId));
-            isReuse = true;
             Logger.LogInformation($"LLM recommends reusing child agent {recommendedAgentId} for subtask {callId}");
+            var taskDescription = await PrepareTaskWithDependencyContextAsync(subTask);
+            var targetAgentId = child.GetGrainId();
+            await PublishAsync(targetAgentId, new ContinueConversationEvent
+            {
+                TargetAgentId = targetAgentId.ToString(),
+                UserMessage = taskDescription
+            });
+            // Update subTask's ChildAgentId
+            subTask.ChildAgentId = child.GetGrainId().ToString();
+            return new CallbackData
+            {
+                CallId = callId,
+                ChildAgentId = child.GetGrainId().ToString(),
+                Task = subTask.Task,
+                CreatedAt = DateTime.UtcNow
+            };
         }
         else
         {
@@ -184,23 +215,22 @@ public partial class PsiGAgent
                 Configuration = config,
                 ParenteAgentId = State.AgentId
             });
+            var taskDescription = await PrepareTaskWithDependencyContextAsync(subTask);
+            await PublishAsync(child.GetGrainId(), new SendTaskEvent
+            {
+                CallId = callId,
+                Task = taskDescription
+            });
+            // Update subTask's ChildAgentId
+            subTask.ChildAgentId = child.GetGrainId().ToString();
+            return new CallbackData
+            {
+                CallId = callId,
+                ChildAgentId = child.GetGrainId().ToString(),
+                Task = subTask.Task,
+                CreatedAt = DateTime.UtcNow
+            };
         }
-
-        var taskDescription = await PrepareTaskWithDependencyContextAsync(subTask);
-        await PublishAsync(child.GetGrainId(), new SendTaskEvent
-        {
-            CallId = callId,
-            Task = taskDescription
-        });
-        // Update subTask's ChildAgentId
-        subTask.ChildAgentId = child.GetGrainId().ToString();
-        return new CallbackData
-        {
-            CallId = callId,
-            ChildAgentId = child.GetGrainId().ToString(),
-            Task = subTask.Task,
-            CreatedAt = DateTime.UtcNow
-        };
     }
 
     /// <summary>

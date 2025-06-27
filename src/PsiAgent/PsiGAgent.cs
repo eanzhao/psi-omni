@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using PsiOrleans.Common.Interfaces;
 using PsiOrleans.Common.Models;
@@ -75,16 +78,36 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
     [EventHandler]
     public async Task HandleContinueConversationEventAsync(ContinueConversationEvent @event)
     {
-        if (!State.Orchestrator.IsInConversation) return;
-
-        Logger.LogInformation("ContinueConversationEvent: {Message}", @event.UserMessage);
-
-        RaiseEvent(new UpdateOrchestratorChatEvent
+        if (@event.TargetAgentId != this.GetGrainId().ToString())
         {
-            Messages = new List<ChatMessage> { ChatMessage.CreateUserMessage(@event.UserMessage) }
-        });
+            // Not for me
+            return;
+        }
+        if (State.TaskAnalysisResult.RecommendedApproach == TaskApproach.Orchestration)
+        {
+            if (!State.Orchestrator.IsInConversation) return;
 
-        await ConfirmEvents();
+            Logger.LogInformation("ContinueConversationEvent: {Message}", @event.UserMessage);
+
+            RaiseEvent(new UpdateOrchestratorChatEvent
+            {
+                Messages = new List<ChatMessage> { ChatMessage.CreateUserMessage(@event.UserMessage) }
+            });
+
+            await ConfirmEvents();            
+        }
+        else if (State.TaskAnalysisResult.RecommendedApproach == TaskApproach.DirectExecution)
+        {
+         RaiseEvent(new UpdateSpecializedChatEvent()
+         {
+             Messages = new List<ChatMessage>()
+             {
+                 ChatMessage.CreateUserMessage(@event.UserMessage)
+             }
+         });   
+        }
+        
+
     }
 
     private async Task StartSpecializedExecutionAsync()
@@ -93,23 +116,37 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
         {
             try
             {
+                var preChatHistoryLength = State.SpecializedState.ChatHistory.Count;
                 var chatHistory = await ExecuteSpecializedAsync();
-                if (chatHistory != null)
+                if (chatHistory.Count > preChatHistoryLength)
                 {
-                    var serializable = chatHistory.Select(m =>
+                    var serializable = chatHistory.Skip(preChatHistoryLength).Select(m =>
                         {
+                            SerializedChatMessageContent serialized = null;
                             if (m is OpenAIChatMessageContent mm)
                             {
-                                var toolCalls = mm.ToolCalls.Select(x => new ToolCall()
+                                var json = JsonSerializer.Serialize(mm);
+                                serialized = new SerializedChatMessageContent()
                                 {
-                                    FunctionName = x.FunctionName,
-                                    FunctionArguments = x.FunctionArguments.ToString()
-                                }).ToList();
-                                return new ChatMessage(m.Role.ToString(), m.Content, m.AuthorName ?? string.Empty,
-                                    toolCalls);
+                                    TypeFullName = typeof(OpenAIChatMessageContent).FullName,
+                                    Json = json
+                                };
+                            }
+                            if(m.Role == AuthorRole.Tool){
+                                var message = new ChatMessage(m.Role.ToString(), m.Content);
+                                var functionResult = m.Items.OfType<FunctionResultContent>().FirstOrDefault();
+                                if (functionResult != null)
+                                {
+                                    message.Metadata[OpenAIChatMessageContent.ToolIdProperty] = functionResult.CallId;
+                                }
+
+                                return message;
                             }
 
-                            return new ChatMessage(m.Role.ToString(), m.Content);
+                            return new ChatMessage(m.Role.ToString(), m.Content)
+                            {
+                                Serialized = serialized
+                            };
                         })
                         .ToList();
                     RaiseEvent(new UpdateSpecializedRunResultEvent
@@ -230,12 +267,22 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                 }
 
                 break;
+            case UpdateSpecializedChatEvent payload:
+                if (payload.Messages.Any())
+                {
+                    state.SpecializedState.ChatHistory.AddRange(payload.Messages);
+                    DoAsync(StartSpecializedExecutionAsync);
+                }
+                break;
             case UpdateTaskAnalysicResultEvent payload:
                 if (state.TaskAnalysisResult.RecommendedApproach == TaskApproach.Unknown)
                 {
                     state.TaskAnalysisResult = payload.TaskAnalysisResult;
                     if (payload.TaskAnalysisResult.RecommendedApproach == TaskApproach.DirectExecution)
                     {
+                        var systemPrompt = "You are a specialized agent. Use the available tool functions. When you are done, summarize the result but do no more tool calls.";
+                        state.SpecializedState.ChatHistory.Add(ChatMessage.CreateSystemMessage(systemPrompt));
+                        state.SpecializedState.ChatHistory.Add(ChatMessage.CreateUserMessage(State.Task));
                         DoAsync(async () => { await StartSpecializedExecutionAsync(); });
                     }
                     else if (payload.TaskAnalysisResult.RecommendedApproach == TaskApproach.Orchestration)
@@ -246,7 +293,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
 
                 break;
             case UpdateSpecializedRunResultEvent payload:
-                if (state.SpecializedState.ChatHistory.IsNullOrEmpty())
+                if (payload.ChatHistory.Count > 0)
                 {
                     state.SpecializedState.ChatHistory.AddRange(payload.ChatHistory);
                     DoAsync(async () => { await CompleteSpecializedExecutionAsync(); });
@@ -287,8 +334,11 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
 
                 state.Orchestrator.ConversationHistory.AddRange(
                     payload.CallbackDatas.Select(cbd =>
-                        ChatMessage.CreateSystemMessage(
-                            $"Delegated subtask: {cbd.Task} to agent {cbd.ChildAgentId}"))
+                    {
+                        var msg = ChatMessage.CreateSystemMessage($"Delegated subtask: {cbd.Task} to agent {cbd.ChildAgentId}");
+                        msg.ChildInteractions = new List<ChildInteraction> { new ChildInteraction { InteractionType = "TaskAssignment", ChildAgentId = cbd.ChildAgentId, CallId = cbd.CallId, Payload = cbd.Task, Timestamp = DateTime.UtcNow } };
+                        return msg;
+                    })
                 );
 
                 break;
@@ -321,10 +371,9 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
                     }
                 }
 
-                state.Orchestrator.ConversationHistory.Add(
-                    ChatMessage.CreateSystemMessage(
-                        $"Received result from subtask {callback.CallId}: {callback.Reply.Content}")
-                );
+                var callbackMsg = ChatMessage.CreateSystemMessage($"Received result from subtask {callback.CallId}: {callback.Reply.Content}");
+                callbackMsg.ChildInteractions = new List<ChildInteraction> { new ChildInteraction { InteractionType = "Callback", ChildAgentId = callback.TargetAgentId, CallId = callback.CallId, Payload = callback.Reply.Content, Timestamp = DateTime.UtcNow } };
+                state.Orchestrator.ConversationHistory.Add(callbackMsg);
 
                 DoAsync(async () =>
                 {
@@ -361,7 +410,7 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
 
     private async Task ProgressAsync()
     {
-        var (decision, newSubTasks, reply) = await DecideNextOrchestratorActionAsync();
+        var (decision, newSubTasks, reply, payload) = await DecideNextOrchestratorActionAsync();
         if (decision == OrchestrationDecision.CompleteTask)
         {
             var result = await AggregateResultsAsync();
@@ -382,6 +431,39 @@ public partial class PsiGAgent : GAgentBase<AgentState, AgentStateLogEvent>
             if (callbackDatas.Any())
             {
                 RaiseEvent(new UpdateSubTaskCallbackDatasEvent { CallbackDatas = callbackDatas });
+            }
+        }
+        else if (decision == OrchestrationDecision.CancelSubTask)
+        {
+            // Cancel the specified subtask
+            var subTaskId = payload?.CancelSubTaskId;
+            var subTask = State.Orchestrator.CurrentSubTasks.SingleOrDefault(st => st.SubTaskId == subTaskId);
+            if (subTask != null)
+            {
+                subTask.Status = SubTaskStatus.Failed;
+                var cancelMsg = ChatMessage.CreateSystemMessage($"Canceled subtask: {subTask.Task} (ID: {subTask.SubTaskId})");
+                cancelMsg.ChildInteractions = new List<ChildInteraction> { new ChildInteraction { InteractionType = "Cancel", ChildAgentId = subTask.ChildAgentId ?? string.Empty, CallId = subTask.SubTaskId, Payload = "Canceled by orchestrator", Timestamp = DateTime.UtcNow } };
+                State.Orchestrator.ConversationHistory.Add(cancelMsg);
+                Logger.LogInformation($"Canceled subtask {subTask.SubTaskId}");
+            }
+        }
+        else if (decision == OrchestrationDecision.FollowUpChild)
+        {
+            // Send follow-up message to the specified child agent
+            var childAgentId = payload?.FollowUpChildAgentId;
+            var followUpMessage = payload?.FollowUpMessage;
+            if (!string.IsNullOrEmpty(childAgentId) && !string.IsNullOrEmpty(followUpMessage))
+            {
+                var grainId = Orleans.Runtime.GrainId.Parse(childAgentId);
+                await PublishAsync(grainId, new ContinueConversationEvent
+                {
+                    TargetAgentId = grainId.ToString(),
+                    UserMessage = followUpMessage
+                });
+                var followUpMsg = ChatMessage.CreateSystemMessage($"Sent follow-up to child agent {childAgentId}: {followUpMessage}");
+                followUpMsg.ChildInteractions = new List<ChildInteraction> { new ChildInteraction { InteractionType = "FollowUp", ChildAgentId = childAgentId, Payload = followUpMessage, Timestamp = DateTime.UtcNow } };
+                State.Orchestrator.ConversationHistory.Add(followUpMsg);
+                Logger.LogInformation($"Sent follow-up to child agent {childAgentId}");
             }
         }
 

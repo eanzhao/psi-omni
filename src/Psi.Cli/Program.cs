@@ -72,7 +72,11 @@ class Program
             var (gAgentFactory, _) = await InitAsync();
             var agent = await gAgentFactory.GetGAgentAsync(GrainId.Parse(id));
             var publisher = await gAgentFactory.GetGAgentAsync<IPublishingGAgent>(Guid.NewGuid());
-            var evt = new ContinueConversationEvent { UserMessage = message };
+            var evt = new ContinueConversationEvent
+            {
+                TargetAgentId = id,
+                UserMessage = message
+            };
             await publisher.PublishEventAsync(evt, agent);
             Console.WriteLine($"Sent ContinueConversationEvent to agent {id} with message: {message}");
         }, continueMessageArg);

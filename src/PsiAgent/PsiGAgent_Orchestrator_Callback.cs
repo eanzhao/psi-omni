@@ -15,6 +15,9 @@ public partial class PsiGAgent
         [JsonPropertyName("reasoning")] public string Reasoning { get; set; }
         [JsonPropertyName("new_tasks")] public List<NewSubTask> NewTasks { get; set; } = new();
         [JsonPropertyName("reply")] public string Reply { get; set; }
+        [JsonPropertyName("cancel_subtask_id")] public string CancelSubTaskId { get; set; }
+        [JsonPropertyName("followup_child_agent_id")] public string FollowUpChildAgentId { get; set; }
+        [JsonPropertyName("followup_message")] public string FollowUpMessage { get; set; }
     }
 
     private class NewSubTask
@@ -65,7 +68,7 @@ public partial class PsiGAgent
         Logger.LogInformation("Updated dependency results for {DependentCount} subtasks", dependentSubTasks.Count);
     }
 
-    private async Task<(OrchestrationDecision, List<SubTask>, string)> DecideNextOrchestratorActionAsync()
+    private async Task<(OrchestrationDecision, List<SubTask>, string, OrchestrationDecisionPayload)> DecideNextOrchestratorActionAsync()
     {
         var agentConfig = State.Configuration;
         var kernel = _kernelFactory.CreateKernel(agentConfig);
@@ -83,6 +86,29 @@ public partial class PsiGAgent
         var pendingSubTasks = currentSubTasks.Count(st => st.Status == SubTaskStatus.Delegated);
         var notStartedSubTasks = currentSubTasks.Count(st => st.Status == SubTaskStatus.Pending);
 
+        var pendingSubTaskDetails = currentSubTasks
+            .Where(st => st.Status == SubTaskStatus.Delegated)
+            .Select(st => $"- SubTaskId: {st.SubTaskId}, Task: {st.Task}, ChildAgentId: {st.ChildAgentId}, Status: {st.Status}, RequiredTools: [{string.Join(", ", st.RequiredTools)}], Priority: {st.Priority}, Dependencies: [{string.Join(", ", st.Dependencies)}], ReframedTask: {st.ReframedTask}")
+            .ToList();
+        var notStartedSubTaskDetails = currentSubTasks
+            .Where(st => st.Status == SubTaskStatus.Pending)
+            .Select(st => $"- SubTaskId: {st.SubTaskId}, Task: {st.Task}, ChildAgentId: {st.ChildAgentId}, Status: {st.Status}, RequiredTools: [{string.Join(", ", st.RequiredTools)}], Priority: {st.Priority}, Dependencies: [{string.Join(", ", st.Dependencies)}], ReframedTask: {st.ReframedTask}")
+            .ToList();
+
+        var jsonSchema = @"{
+  ""decision"": ""COMPLETE_FINAL"" | ""COMPLETE_INTERMEDIATE"" | ""CREATE_ADDITIONAL_TASKS"" | ""WAIT_FOR_MORE_CALLBACKS"" | ""CANCEL_SUBTASK"" | ""FOLLOWUP_CHILD"",
+  ""reasoning"": ""Your detailed analysis"",
+  ""new_tasks"": [
+        {""id"": ""temp-1"", ""task"": ""New subtask description 1"", ""dependencies"": [] },
+        {""id"": ""temp-2"", ""task"": ""New subtask description 2"", ""dependencies"": [] },
+        {""id"": ""temp-3"", ""task"": ""New subtask description 3"", ""dependencies"": [""temp-1"",""temp-2""] }
+    ],
+  ""reply"": ""Your next response to the user."",
+  ""cancel_subtask_id"": ""(if decision is CANCEL_SUBTASK, the subtask id to cancel)"",
+  ""followup_child_agent_id"": ""(if decision is FOLLOWUP_CHILD, the child agent id)"",
+  ""followup_message"": ""(if decision is FOLLOWUP_CHILD, the message to send)""
+}";
+
         var decisionPrompt = $@"
 You are an expert orchestrator analyzing the progress of a complex, multi-round conversational task. Your goal is to decide the next best course of action.
 
@@ -96,19 +122,22 @@ Subtask Progress Summary:
 - In Progress (Delegated): {pendingSubTasks}
 - Not Started: {notStartedSubTasks}
 
+Pending Subtasks Details:
+{string.Join("\n", pendingSubTaskDetails)}
+
+Not Started Subtasks Details:
+{string.Join("\n", notStartedSubTaskDetails)}
+
 Based on the conversation and subtask progress, determine the next action.
 - If all subtasks are complete and the original task is fulfilled, decide to 'COMPLETE_FINAL'.
 - If all subtasks are complete but the conversation should continue, decide to 'COMPLETE_INTERMEDIATE'.
 - If more subtasks are needed, decide to 'CREATE_ADDITIONAL_TASKS'.
 - If you need to wait for pending subtasks, decide to 'WAIT_FOR_MORE_CALLBACKS'.
+- If a pending or not started subtask should be canceled, decide to 'CANCEL_SUBTASK' and specify the subtask id.
+- If a follow-up message should be sent to a child agent, decide to 'FOLLOWUP_CHILD' and specify the child agent id and the follow-up message.
 
-Respond in JSON format with your decision, reasoning, a list of any new tasks, and the next reply to the user.
-{{
-  ""decision"": ""COMPLETE_FINAL"" | ""COMPLETE_INTERMEDIATE"" | ""CREATE_ADDITIONAL_TASKS"" | ""WAIT_FOR_MORE_CALLBACKS"",
-  ""reasoning"": ""Your detailed analysis"",
-  ""new_tasks"": [{{""id"": ""temp-1"", ""task"": ""New subtask description"", ""dependencies"": [] }}],
-  ""reply"": ""Your next response to the user.""
-}}";
+Respond in JSON format with your decision, reasoning, a list of any new tasks, the next reply to the user, and if relevant, the subtask id to cancel or the child agent id and follow-up message.
+" + jsonSchema;
 
         var result = await chatService.GetChatMessageContentAsync(decisionPrompt);
         var responseJson = result.Content ?? string.Empty;
@@ -129,7 +158,7 @@ Respond in JSON format with your decision, reasoning, a list of any new tasks, a
         catch (JsonException ex)
         {
             Logger.LogError(ex, "Failed to deserialize orchestration decision from LLM. Response: {response}", responseJson);
-            return (OrchestrationDecision.WaitForMoreCallbacks, new List<SubTask>(), "I encountered an issue processing the last step. Please try again.");
+            return (OrchestrationDecision.WaitForMoreCallbacks, new List<SubTask>(), "I encountered an issue processing the last step. Please try again.", null);
         }
 
         var decision = analysis?.Decision?.ToUpperInvariant();
@@ -157,7 +186,9 @@ Respond in JSON format with your decision, reasoning, a list of any new tasks, a
                     {
                         var newSubTask = new SubTask
                         {
-                            SubTaskId = Guid.NewGuid().ToString(),
+                            SubTaskId = currentTaskIds.Contains(taskInfo.Id)
+                                ? taskInfo.Id
+                                : Guid.NewGuid().ToString(),
                             Task = taskInfo.Task,
                             Status = SubTaskStatus.Pending,
                             Dependencies = taskInfo.Dependencies
@@ -174,22 +205,28 @@ Respond in JSON format with your decision, reasoning, a list of any new tasks, a
                             .Select(depId => idMapping.TryGetValue(depId, out var newId) ? newId : depId)
                             .ToList();
                     }
+
+                    newSubTasks = newSubTasks.Where(t => !currentTaskIds.Contains(t.SubTaskId)).ToList();
                 }
                 break;
             case "WAIT_FOR_MORE_CALLBACKS":
+            case "CANCEL_SUBTASK":
+            case "FOLLOWUP_CHILD":
+                finalDecision = OrchestrationDecision.WaitForMoreCallbacks;
+                break;
             default:
                 finalDecision = OrchestrationDecision.WaitForMoreCallbacks;
                 break;
         }
         
         // Enforce critical rule: if tasks are pending, we must wait.
-        if (pendingSubTasks > 0 && finalDecision != OrchestrationDecision.WaitForMoreCallbacks)
-        {
-            Logger.LogWarning("Overriding LLM decision to WAIT because there are {Count} pending subtasks.", pendingSubTasks);
-            finalDecision = OrchestrationDecision.WaitForMoreCallbacks;
-        }
+        // if (pendingSubTasks > 0 && finalDecision != OrchestrationDecision.WaitForMoreCallbacks)
+        // {
+        //     Logger.LogWarning("Overriding LLM decision to WAIT because there are {Count} pending subtasks.", pendingSubTasks);
+        //     finalDecision = OrchestrationDecision.WaitForMoreCallbacks;
+        // }
 
-        return (finalDecision, newSubTasks, reply);
+        return (finalDecision, newSubTasks, reply, analysis);
     }
 
     private async Task<string> AggregateResultsAsync()

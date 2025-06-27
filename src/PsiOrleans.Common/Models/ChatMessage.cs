@@ -1,13 +1,31 @@
-using Orleans;
-
 namespace PsiOrleans.Common.Models;
 
 [Serializable]
 [GenerateSerializer]
 public class ToolCall
 {
-    [Id(0)] public string FunctionName { get; set; } = string.Empty;
-    [Id(1)] public string FunctionArguments { get; set; } = string.Empty;
+    [Id(0)] public string Id { get; set; } = string.Empty;
+    [Id(1)] public string FunctionName { get; set; } = string.Empty;
+    [Id(2)] public string FunctionArguments { get; set; } = string.Empty;
+}
+
+[Serializable]
+[GenerateSerializer]
+public class ChildInteraction
+{
+    [Id(0)] public string InteractionType { get; set; } = string.Empty; // e.g. "TaskAssignment", "FollowUp", "Cancel"
+    [Id(1)] public string ChildAgentId { get; set; } = string.Empty;
+    [Id(2)] public string? CallId { get; set; }
+    [Id(3)] public string Payload { get; set; } = string.Empty;
+    [Id(4)] public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+}
+
+[Serializable]
+[GenerateSerializer]
+public class SerializedChatMessageContent
+{
+    [Id(0)] public string TypeFullName { get; set; } = string.Empty;
+    [Id(1)] public string Json { get; set; } = string.Empty;
 }
 
 [Serializable]
@@ -25,6 +43,9 @@ public class ChatMessage
     [Id(4)] public Dictionary<string, object> Metadata { get; set; } = new();
 
     [Id(5)] public List<ToolCall> ToolCalls { get; set; } = new();
+    [Id(6)] public SerializedChatMessageContent? Serialized { get; set; }
+
+    [Id(7)] public List<ChildInteraction> ChildInteractions { get; set; } = new();
 
     /// <summary>
     /// Default constructor
@@ -40,7 +61,7 @@ public class ChatMessage
     {
         Role = role ?? string.Empty;
         Content = content ?? string.Empty;
-        Name = name??string.Empty;
+        Name = name ?? string.Empty;
         ToolCalls = toolCalls ?? new List<ToolCall>();
         Timestamp = DateTime.UtcNow;
     }

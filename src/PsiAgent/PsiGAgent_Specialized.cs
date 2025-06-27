@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using PsiOrleans.Common;
 
 namespace PsiAgent;
 
@@ -42,15 +42,25 @@ public partial class PsiGAgent
             Temperature = temperature
         };
 
-        var chatHistory = new ChatHistory();
-        var enhancedPrompt = "You are a specialized agent. You MUST use the available tools.";
-        chatHistory.AddSystemMessage(enhancedPrompt);
-        var enhancedTask = State.Task +
-                           "\n\nREQUIREMENT: Use the available tool functions. When you are done, summarize the result but do no more tool calls.";
-        chatHistory.AddUserMessage(enhancedTask);
+        var chatHistory = GetChatHistory();
+        // var enhancedPrompt = "You are a specialized agent. You MUST use the available tools.";
+        // chatHistory.AddSystemMessage(enhancedPrompt);
+        // var enhancedTask = State.Task +
+        //                    "\n\nREQUIREMENT: Use the available tool functions. When you are done, summarize the result but do no more tool calls.";
+        // chatHistory.AddUserMessage(enhancedTask);
         var result = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel);
         chatHistory.Add(result);
-        Logger.LogInformation($"result: {result}");
+        // Logger.LogInformation($"result: {result}");
+        return chatHistory;
+    }
+
+    private ChatHistory GetChatHistory()
+    {
+        var chatHistory = new ChatHistory();
+        var messages =
+            State.SpecializedState.ChatHistory.Select(message => ChatMessageConverter.ToSemanticKernelMessage(message));
+        chatHistory.AddRange(messages);
+
         return chatHistory;
     }
 }

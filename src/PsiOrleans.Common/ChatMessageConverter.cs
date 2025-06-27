@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text.Json;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using PsiOrleans.Common.Models;
 
 namespace PsiOrleans.Common;
@@ -41,7 +42,12 @@ public static class ChatMessageConverter
 
         ChatMessageContent chatMessage;
 
-        if (message.ToolCalls is { Count: > 0 })
+        if (message.Serialized != null && !string.IsNullOrEmpty(message.Serialized.TypeFullName) &&
+            message.Serialized.TypeFullName == typeof(OpenAIChatMessageContent).FullName)
+        {
+            chatMessage = JsonSerializer.Deserialize<OpenAIChatMessageContent>(message.Serialized.Json);
+        }
+        else if (message.ToolCalls is { Count: > 0 })
         {
             var items = new ChatMessageContentItemCollection();
             if (!string.IsNullOrEmpty(message.Content))
@@ -70,8 +76,9 @@ public static class ChatMessageConverter
                         kernelArgs["arguments"] = toolCall.FunctionArguments;
                     }
                 }
-                
-                items.Add(new FunctionCallContent(toolCall.FunctionName, arguments: kernelArgs, id: Guid.NewGuid().ToString()));
+
+                items.Add(new FunctionCallContent(toolCall.FunctionName, arguments: kernelArgs,
+                    id: Guid.NewGuid().ToString()));
             }
 
             chatMessage = new ChatMessageContent(role, items, metadata: metadata);
@@ -122,17 +129,21 @@ public static class ChatMessageConverter
         {
             if (skMessage.GetType().FullName == "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent")
             {
-                if (skMessage.GetType().GetProperty("ToolCalls")?.GetValue(skMessage) is System.Collections.IEnumerable skToolCalls)
+                if (skMessage.GetType().GetProperty("ToolCalls")?.GetValue(skMessage) is System.Collections.IEnumerable
+                    skToolCalls)
                 {
                     foreach (var skToolCall in skToolCalls)
                     {
-                        var functionName = skToolCall.GetType().GetProperty("FunctionName")?.GetValue(skToolCall) as string;
+                        var id = skToolCall.GetType().GetProperty("Id")?.GetValue(skToolCall) as string;
+                        var functionName =
+                            skToolCall.GetType().GetProperty("FunctionName")?.GetValue(skToolCall) as string;
                         var arguments = skToolCall.GetType().GetProperty("Arguments")?.GetValue(skToolCall);
 
                         if (functionName != null && arguments != null)
                         {
                             psiToolCalls.Add(new ToolCall
                             {
+                                Id = id,
                                 FunctionName = functionName,
                                 FunctionArguments = JsonSerializer.Serialize(arguments)
                             });
@@ -153,6 +164,7 @@ public static class ChatMessageConverter
                 .OfType<FunctionCallContent>()
                 .Select(fc => new ToolCall
                 {
+                    Id = fc.Id,
                     FunctionName = fc.FunctionName ?? string.Empty,
                     FunctionArguments = JsonSerializer.Serialize(fc.Arguments)
                 }));
@@ -165,4 +177,4 @@ public static class ChatMessageConverter
 
         return psiMessage;
     }
-} 
+}
