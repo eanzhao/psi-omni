@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -9,11 +9,11 @@ using PsiOrleans.Common;
 using PsiOrleans.Common.Interfaces;
 using PsiOrleans.Common.Models;
 
-namespace PsiAgnet.Specialized;
+namespace PsiGAgent.Orchestrator;
 
 [Serializable]
 [GenerateSerializer]
-public class PsiSpecializedGAgentState : StateBase
+public class PsiOrchestratorGAgentState : StateBase
 {
     /// <summary>
     /// Chat history for this agent
@@ -27,53 +27,89 @@ public class PsiSpecializedGAgentState : StateBase
     [Id(4)] public AgentConfiguration? Configuration { get; set; }
     [Id(5)] public List<string> Tools { get; set; } = new();
     [Id(6)] public string SystemPrompt { get; set; } = string.Empty;
+    [Id(7)] public List<AgentParticulars> ChildAgents { get; set; } = new();
 }
 
 [GenerateSerializer]
-public class PsiSpecializedGAgentStateLogEvent : StateLogEventBase<PsiSpecializedGAgentStateLogEvent>;
+public class PsiOrchestratorGAgentStateLogEvent : StateLogEventBase<PsiOrchestratorGAgentStateLogEvent>;
 
 [GenerateSerializer]
-public class UpdateSendConfigEvent : PsiSpecializedGAgentStateLogEvent
+public class UpdateSendConfigEvent : PsiOrchestratorGAgentStateLogEvent
 {
     [Id(0)] public AgentConfigEvent Event { get; set; } = new();
 }
 
 [GenerateSerializer]
-public class ReceiveUserMessageEvent : PsiSpecializedGAgentStateLogEvent
+public class ReceiveUserMessageEvent : PsiOrchestratorGAgentStateLogEvent
 {
     [Id(0)] public UserMessageEvent Event { get; set; } = new();
 }
 
 [GenerateSerializer]
-public class GrowChatHistoryEvent : PsiSpecializedGAgentStateLogEvent
+public class ReceiveAgentMessageEvent : PsiOrchestratorGAgentStateLogEvent
+{
+    [Id(0)] public AgentMessageEvent Event { get; set; } = new();
+}
+
+[GenerateSerializer]
+public class GrowChatHistoryEvent : PsiOrchestratorGAgentStateLogEvent
 {
     [Id(0)] public List<ChatMessage> NewMessages { get; set; } = new();
 }
 
-[GAgent("psi", "specialized")]
-public partial class PsiSpecializedGAgent : GAgentBase<PsiSpecializedGAgentState, PsiSpecializedGAgentStateLogEvent>
+[GAgent("psi", "orchestrator")]
+public class PsiOrchestratorGAgent : GAgentBase<PsiOrchestratorGAgentState, PsiOrchestratorGAgentStateLogEvent>
 {
+    string SYSTEM_PROMPT = """
+                           You are a helpful assistant that can interact with the user, analyze the user's request,
+                           break down the request into sub-tasks and create new agents or re-use existing agents to handle the sub-tasks.
+                           You can create new agents with the create_agent function.
+                           You can list the created agents with the list_created_agents function.
+                           You can list the available tools with the list_available_tools function.
+
+                           ## What you are supposed to do
+                           - You are the orchestrator of the agents.
+                           - You always try to understand the user's request and break it down into sub-tasks.
+                           - You are responsible for creating new agents and managing them.
+                           - You are responsible for the overall flow of the conversation.
+                           - You DON'T use tools other than those for managing agents.
+
+                           
+                           
+                           ## Rules for creating agents
+                           - Agents will use the tools given to them.
+                           - Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.
+
+                           ## Minimize interaction with the user
+                           - Don't be verbose and keep asking for confirmation from the user.
+                           - Apply your best judgement to create agents without asking for permission.
+                           """;
+
     private readonly IKernelFactory _kernelFactory;
     private readonly IGAgentFactory _gAgentFactory;
+    private readonly IAgentService _agentService;
     private readonly HashSet<string> _receivedMessageIds = new HashSet<string>();
 
-    public PsiSpecializedGAgent(
+    public PsiOrchestratorGAgent(
         IKernelFactory kernelFactory,
-        IGAgentFactory gAgentFactory
+        IGAgentFactory gAgentFactory,
+        IAgentService agentService
     )
     {
         _kernelFactory = kernelFactory;
         _gAgentFactory = gAgentFactory;
+        _agentService = agentService;
     }
 
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult($"System Prompt:\n{State.SystemPrompt}\n\nTools:\n{string.Join("\n", State.Tools)}");
+        throw new NotImplementedException();
     }
 
     [EventHandler]
     public async Task HandleSendConfigEventAsync(AgentConfigEvent @event)
     {
+        _agentService.SetConfiguration(@event.Configuration);
         Logger.LogInformation("SendConfigEvent: {Task}", @event.Configuration.Model.ModelId);
         RaiseEvent(new UpdateSendConfigEvent()
         {
@@ -104,6 +140,29 @@ public partial class PsiSpecializedGAgent : GAgentBase<PsiSpecializedGAgentState
         await ConfirmEvents();
     }
 
+    [EventHandler]
+    public async Task HandleAgentMessageEventAsync(AgentMessageEvent @event)
+    {
+        if (@event.TargetAgentId != this.GetGrainId().ToString())
+        {
+            // Not for me
+            return;
+        }
+
+        if (_receivedMessageIds.Contains(@event.UniqueId))
+        {
+            return;
+        }
+
+        _receivedMessageIds.Add(@event.UniqueId);
+
+        RaiseEvent(new ReceiveAgentMessageEvent()
+        {
+            Event = @event
+        });
+        await ConfirmEvents();
+    }
+
     private async Task RunAsync()
     {
         if (State.ChatHistory.IsNullOrEmpty())
@@ -119,12 +178,12 @@ public partial class PsiSpecializedGAgent : GAgentBase<PsiSpecializedGAgentState
         }
 
         var kernel = _kernelFactory.CreateKernel(
-            State.Configuration,
-            State.Tools
-        );
+            State.Configuration
+        ); // Orchestrator doesn't have specialized tools.
         if (kernel == null)
             throw new InvalidOperationException("Kernel is not configured for tool execution.");
 
+        kernel.Plugins.AddFromObject(_agentService, "AgentServices");
         // 1. 获取 chat completion 服务
         var chatService = kernel.GetRequiredService<IChatCompletionService>();
 
@@ -164,6 +223,7 @@ public partial class PsiSpecializedGAgent : GAgentBase<PsiSpecializedGAgentState
                     if (functionResult != null)
                     {
                         message.Metadata[OpenAIChatMessageContent.ToolIdProperty] = functionResult.CallId;
+                        message.Metadata["FunctionName"] = functionResult.FunctionName;
                     }
 
                     return message;
@@ -192,9 +252,8 @@ public partial class PsiSpecializedGAgent : GAgentBase<PsiSpecializedGAgentState
         });
     }
 
-
-    protected override void GAgentTransitionState(PsiSpecializedGAgentState state,
-        StateLogEventBase<PsiSpecializedGAgentStateLogEvent> @event)
+    protected override void GAgentTransitionState(PsiOrchestratorGAgentState state,
+        StateLogEventBase<PsiOrchestratorGAgentStateLogEvent> @event)
     {
         switch (@event)
         {
@@ -207,6 +266,7 @@ public partial class PsiSpecializedGAgent : GAgentBase<PsiSpecializedGAgentState
                     state.UserAgentId = payload.Event.ParentAgentId;
                     state.Configuration = config;
                     state.Tools = payload.Event.Tools;
+                    state.SystemPrompt = SYSTEM_PROMPT + $"\nYour agent id is: {grainId}";
                 }
 
                 break;
@@ -221,18 +281,45 @@ public partial class PsiSpecializedGAgent : GAgentBase<PsiSpecializedGAgentState
                 {
                     var message = ChatMessage.CreateUserMessage(payload.Event.Content);
                     message.Metadata["CallId"] = payload.Event.CallId;
-                    state.UserAgentId = payload.Event.ReplyToAgentId;
                     state.ChatHistory.Add(message);
                     DoAsync(RunAsync);
                 }
 
                 break;
+            case ReceiveAgentMessageEvent payload:
+                var amessage = ChatMessage.CreateAssistantMessage(payload.Event.Content);
+                amessage.Metadata["CallId"] = payload.Event.CallId;
+                state.ChatHistory.Add(amessage);
+                DoAsync(RunAsync);
+                break;
             case GrowChatHistoryEvent payload:
                 state.ChatHistory.AddRange(payload.NewMessages);
+                foreach (var message in payload.NewMessages)
+                {
+                    if (message.Role == "tool" &&
+                        message.Metadata.TryGetValue("FunctionName", out var funcNameObject) &&
+                        funcNameObject is string funcName && funcName == "create_agent")
+                    {
+                        try
+                        {
+                            var agentParticulars = JsonSerializer.Deserialize<AgentParticulars>(message.Content);
+                            if (agentParticulars != null && !string.IsNullOrEmpty(agentParticulars.AgentId))
+                            {
+                                if (!state.ChildAgents.Any(a => a.AgentId == agentParticulars.AgentId))
+                                {
+                                    state.ChildAgents.Add(agentParticulars);
+                                }
+                            }
+                        }
+                        catch (JsonException)
+                        {
+                            // ignore if content is not a valid AgentParticulars json
+                        }
+                    }
+                }
                 DoAsync(ReplyAsync);
                 break;
         }
-        // base.GAgentTransitionState(state, @event);
     }
 
     private void DoAsync(Func<Task> action)

@@ -19,6 +19,8 @@
 
     <ItemGroup>
         <ProjectReference Include="../Aevatar.Workshop.Client/Aevatar.Workshop.Client.csproj"/>
+        <ProjectReference Include="..\PsiGAgent.Orchestrator\PsiGAgent.Orchestrator.csproj" />
+        <ProjectReference Include="..\PsiGAgent.Specialized\PsiGAgent.Specialized.csproj" />
     </ItemGroup>
 
     <ItemGroup>

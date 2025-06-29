@@ -4,8 +4,21 @@ using System.Text.Json;
 using Aevatar.Workshop.Client;
 using Aevatar.Core.Abstractions;
 using PsiAgent;
+using PsiAgnet.Specialized;
+using PsiGAgent.Orchestrator;
 using PsiOrleans.Common;
 using PsiOrleans.Common.Models;
+
+[Serializable]
+[GenerateSerializer]
+class CompositeState
+{
+    [Id(0)]
+    public PsiOrchestratorGAgentState OrchestratorState { get; set; } = new();
+
+    [Id(1)]
+    public PsiSpecializedGAgentState SpecializedState { get; set; } = new();
+}
 
 class Program
 {
@@ -131,7 +144,7 @@ class Program
 
     static async Task CreateAgentAndCacheAsync(IGAgentFactory gAgentFactory, string task)
     {
-        var psi = await gAgentFactory.GetGAgentAsync("psi", "specialized");
+        var psi = await gAgentFactory.GetGAgentAsync("psi", "orchestrator");
         var publisher = await gAgentFactory.GetGAgentAsync<IPublishingGAgent>(Guid.NewGuid());
         var config = GetAgentConfiguration();
         await publisher.PublishEventAsync(new AgentConfigEvent
@@ -177,10 +190,10 @@ class Program
         PrintAgentStates(agentStates);
     }
 
-    static async Task<List<(AgentState state, int depth, string id)>> GetAgentStatesRecursive(
+    static async Task<List<(CompositeState state, int depth, string id)>> GetAgentStatesRecursive(
         IGAgentFactory gAgentFactory, GrainId agentId, HashSet<string> visited, int depth = 0)
     {
-        var result = new List<(AgentState, int, string)>();
+        var result = new List<(CompositeState, int, string)>();
         if (!visited.Add(agentId.ToString()))
         {
             return result;
@@ -188,71 +201,136 @@ class Program
 
         try
         {
-            var psi = await gAgentFactory.GetGAgentAsync<IStateGAgent<AgentState>>(agentId);
-            var state = (AgentState)await psi.GetStateAsync();
-            var redactedState = RedactModelConfiguration(state);
-            result.Add((redactedState, depth, agentId.ToString()));
-            if (state.Children != null && state.Children.Count > 0)
+            if (agentId.ToString().Contains("orchestrator"))
             {
-                foreach (var childId in state.Children)
+                var psi = await gAgentFactory.GetGAgentAsync<IStateGAgent<PsiOrchestratorGAgentState>>(agentId);
+                var state = await psi.GetStateAsync();
+                var compositeState = new CompositeState { OrchestratorState = state };
+                var redactedState = RedactModelConfiguration(compositeState);
+                result.Add((redactedState, depth, agentId.ToString()));
+                if (state.ChildAgents != null && state.ChildAgents.Count > 0)
                 {
-                    var childStates = await GetAgentStatesRecursive(gAgentFactory, childId, visited, depth + 1);
-                    result.AddRange(childStates);
+                    foreach (var child in state.ChildAgents)
+                    {
+                        var childStates = await GetAgentStatesRecursive(gAgentFactory, GrainId.Parse(child.AgentId), visited, depth + 1);
+                        result.AddRange(childStates);
+                    }
                 }
+                // Note: Children are not on PsiOrchestratorGAgentState, so we can't recurse down.
+                // This might be a design choice or an omission. For now, we follow the type definition.
+            }
+            else
+            {
+                var psi = await gAgentFactory.GetGAgentAsync<IStateGAgent<PsiSpecializedGAgentState>>(agentId);
+                var state = await psi.GetStateAsync();
+                var compositeState = new CompositeState { SpecializedState = state };
+                var redactedState = RedactModelConfiguration(compositeState);
+                result.Add((redactedState, depth, agentId.ToString()));
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Optionally, add error handling or logging here
+            Console.WriteLine($"Error getting state for {agentId}: {ex.Message}");
         }
 
         return result;
     }
 
-    static void PrintAgentStates(List<(AgentState state, int depth, string id)> agentStates)
+    static void PrintAgentStates(List<(CompositeState state, int depth, string id)> agentStates)
     {
+        var options = new JsonSerializerOptions { WriteIndented = true };
         var output = agentStates.Select(x => new { id = x.id, depth = x.depth, state = x.state }).ToList();
-        var json = JsonSerializer.Serialize(output);
+        var json = JsonSerializer.Serialize(output, options);
         Console.WriteLine(json);
     }
 
-    static AgentState RedactModelConfiguration(AgentState state)
+    static CompositeState RedactModelConfiguration(CompositeState state)
     {
-        // Deep clone AgentState (shallow for all except config)
-        var clone = new AgentState
+        var clonedOrchestratorState = state.OrchestratorState;
+        if (state.OrchestratorState != null && state.OrchestratorState.Configuration != null)
         {
-            AgentId = state.AgentId,
-            ParentAgentId = state.ParentAgentId,
-            Task = state.Task,
-            SpecializedAgentId = state.SpecializedAgentId,
-            CallId = state.CallId,
-            AgentRole = state.AgentRole,
-            Orchestrator = state.Orchestrator,
-            TaskAnalysisResult = state.TaskAnalysisResult,
-            SpecializedState = state.SpecializedState
-        };
-        if (state.Configuration != null)
-        {
-            var config = state.Configuration;
-            var model = config.Model;
-            var redactedModel = new ModelConfiguration
-            {
-                ModelId = model?.ModelId ?? string.Empty,
-                ApiKey = "***",
-                BaseUrl = model?.BaseUrl != null ? "***" : null,
-                DeploymentName = model?.DeploymentName != null ? "***" : null,
-                Endpoint = model?.Endpoint != null ? "***" : null,
-                ApiVersion = model?.ApiVersion != null ? "***" : null
-            };
-            clone.Configuration = new AgentConfiguration
-            {
-                Temperature = config.Temperature,
-                MaxTokens = config.MaxTokens,
-                Model = redactedModel
-            };
+            clonedOrchestratorState = CloneAndRedact(state.OrchestratorState);
         }
 
-        return clone;
+        var clonedSpecializedState = state.SpecializedState;
+        if (state.SpecializedState != null && state.SpecializedState.Configuration != null)
+        {
+            clonedSpecializedState = CloneAndRedact(state.SpecializedState);
+        }
+
+        return new CompositeState
+        {
+            OrchestratorState = clonedOrchestratorState,
+            SpecializedState = clonedSpecializedState
+        };
+    }
+
+    private static PsiOrchestratorGAgentState CloneAndRedact(PsiOrchestratorGAgentState orchestratorState)
+    {
+        var config = orchestratorState.Configuration;
+        var model = config.Model;
+
+        var redactedModel = new ModelConfiguration
+        {
+            ModelId = model?.ModelId ?? string.Empty,
+            ApiKey = "***",
+            BaseUrl = model?.BaseUrl != null ? "***" : null,
+            DeploymentName = model?.DeploymentName != null ? "***" : null,
+            Endpoint = model?.Endpoint != null ? "***" : null,
+            ApiVersion = model?.ApiVersion != null ? "***" : null
+        };
+
+        var redactedConfig = new AgentConfiguration
+        {
+            Temperature = config.Temperature,
+            MaxTokens = config.MaxTokens,
+            Model = redactedModel
+        };
+
+        return new PsiOrchestratorGAgentState
+        {
+            ChatHistory = orchestratorState.ChatHistory,
+            AgentId = orchestratorState.AgentId,
+            UserAgentId = orchestratorState.UserAgentId,
+            CallId = orchestratorState.CallId,
+            Tools = orchestratorState.Tools,
+            SystemPrompt = orchestratorState.SystemPrompt,
+            Configuration = redactedConfig
+        };
+    }
+
+    private static PsiSpecializedGAgentState CloneAndRedact(PsiSpecializedGAgentState specializedState)
+    {
+        var config = specializedState.Configuration;
+        var model = config.Model;
+
+        var redactedModel = new ModelConfiguration
+        {
+            ModelId = model?.ModelId ?? string.Empty,
+            ApiKey = "***",
+            BaseUrl = model?.BaseUrl != null ? "***" : null,
+            DeploymentName = model?.DeploymentName != null ? "***" : null,
+            Endpoint = model?.Endpoint != null ? "***" : null,
+            ApiVersion = model?.ApiVersion != null ? "***" : null
+        };
+
+        var redactedConfig = new AgentConfiguration
+        {
+            Temperature = config.Temperature,
+            MaxTokens = config.MaxTokens,
+            Model = redactedModel
+        };
+
+        return new PsiSpecializedGAgentState
+        {
+            ChatHistory = specializedState.ChatHistory,
+            AgentId = specializedState.AgentId,
+            UserAgentId = specializedState.UserAgentId,
+            CallId = specializedState.CallId,
+            Tools = specializedState.Tools,
+            SystemPrompt = specializedState.SystemPrompt,
+            Configuration = redactedConfig
+        };
     }
 
     static async Task ClearCacheAsync()
