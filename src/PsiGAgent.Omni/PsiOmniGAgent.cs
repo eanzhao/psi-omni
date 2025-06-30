@@ -609,7 +609,7 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
     {
         if (State.UserAgentId.IsNullOrEmpty())
         {
-            // Do Nothing
+            Logger.LogInformation("Result:\n{Result}", State.ChatHistory.Last()?.Content);
             return;
         }
 
@@ -632,7 +632,7 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
             if (!_receivedMessageIds.Add(uid))
             {
                 return;
-            }            
+            }
         }
 
         switch (@event)
