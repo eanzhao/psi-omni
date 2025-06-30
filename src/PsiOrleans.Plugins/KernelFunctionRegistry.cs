@@ -4,6 +4,9 @@ using Microsoft.Extensions.Logging;
 using PsiOrleans.Common.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using OpenAI.Assistants;
+using Microsoft.SemanticKernel.Agents;
 
 namespace PsiOrleans.Plugins;
 
@@ -42,7 +45,8 @@ public class KernelFunctionRegistry : IKernelFunctionRegistry
             throw new ArgumentNullException(nameof(plugin));
         if (_plugins.TryAdd(name, plugin))
         {
-            _logger.LogInformation("Registered plugin: {PluginName} with {FunctionCount} functions", name, plugin.FunctionCount);
+            _logger.LogInformation("Registered plugin: {PluginName} with {FunctionCount} functions", name,
+                plugin.FunctionCount);
         }
         else
         {
@@ -58,6 +62,7 @@ public class KernelFunctionRegistry : IKernelFunctionRegistry
         {
             return individualFunction;
         }
+
         var parts = qualifiedName.Split('.', 2, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 2)
         {
@@ -68,8 +73,46 @@ public class KernelFunctionRegistry : IKernelFunctionRegistry
                 return plugin.TryGetFunction(functionName, out var pluginFunction) ? pluginFunction : null;
             }
         }
+
         return null;
     }
+
+    
+    // public static FunctionToolDefinition ToToolDefinition(this KernelFunction function, string? pluginName = null)
+    // {
+    //     if (function.Metadata.Parameters.Count > 0)
+    //     {
+    //         BinaryData parameterData = function.Metadata.CreateParameterSpec();
+    //
+    //         return new FunctionToolDefinition(FunctionName.ToFullyQualifiedName(function.Name, pluginName ?? function.PluginName))
+    //         {
+    //             Description = function.Description,
+    //             Parameters = parameterData,
+    //         };
+    //     }
+    //
+    //     return new FunctionToolDefinition(FunctionName.ToFullyQualifiedName(function.Name, pluginName ?? function.PluginName))
+    //     {
+    //         Description = function.Description
+    //     };
+    // }
+    
+    // public List<FunctionToolDefinition> GetAllToolDefinitions()
+    // {
+    //     return _functions.Values.Select(f => new { Function = f, PluginName = string.Empty }).Concat(
+    //         _plugins.Values.SelectMany(p => p.Select(f => new { Function = f, PluginName = p.Name }))
+    //     ).Select(item =>
+    //     {
+    //         if (string.IsNullOrEmpty(item.PluginName))
+    //         {
+    //             return item.Function.ToToolDefinition();
+    //         }
+    //         else
+    //         {
+    //             return item.Function.ToToolDefinition();
+    //         }
+    //     }).ToList();
+    // }
 
     public List<string> GetAllAvailableToolNames()
     {
@@ -82,6 +125,9 @@ public class KernelFunctionRegistry : IKernelFunctionRegistry
                 toolNames.Add($"{plugin.Name}.{function.Name}");
             }
         }
+
         return toolNames.OrderBy(name => name).ToList();
     }
-} 
+    
+    
+}

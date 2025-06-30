@@ -21,6 +21,7 @@
     <PackageVersion Include="Microsoft.SemanticKernel" Version="$(SkVersion)" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="$(SkVersion)" />
     <PackageVersion Include="Microsoft.SemanticKernel.Plugins.Web" Version="$(SkVersion)" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.57.0-preview" />
     <PackageVersion Include="Microsoft.Orleans.Server" Version="$(OrleansVersion)" />
     <PackageVersion Include="Microsoft.Orleans.Client" Version="$(OrleansVersion)" />
     <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="$(OrleansVersion)" />
@@ -52,5 +53,6 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+    <PackageVersion Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
 </Project>

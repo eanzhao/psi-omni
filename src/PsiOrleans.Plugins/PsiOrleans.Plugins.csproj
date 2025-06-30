@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SemanticKernel" />
+    <ProjectReference Include="Microsoft.SemanticKernel.Agents.OpenAI"/>
   </ItemGroup>
 
   <ItemGroup>

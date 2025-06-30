@@ -8,7 +8,7 @@ public class AgentConfigEvent : EventBase
 {
     [Id(0)] public AgentConfiguration Configuration { get; set; } = new();
     [Id(1)] public string ParentAgentId { get; set; } = string.Empty;
-    [Id(2)] public List<string> Tools { get; set; } = new();
+    [Id(2)] public List<string> Tools { get; set; } = new(); //TODO: Kept here to cater to old code. Need to be delelted.
 }
 
 [GenerateSerializer]

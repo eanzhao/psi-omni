@@ -2,6 +2,7 @@ using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.SemanticKernel.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using PsiAgnet.Omni;
 using PsiGAgent.Orchestrator;
 using PsiOrleans.Common.Interfaces;
 using PsiOrleans.Plugins;
@@ -35,5 +36,7 @@ public class WorkshopHostModule : AbpModule
         context.Services.AddSingleton<IKernelFactory, KernelFactory>();
         context.Services.AddSingleton<IKernelFunctionRegistry, KernelFunctionRegistry>();
         context.Services.AddSingleton<IAgentService, AgentService>();
+        context.Services.AddSingleton<IOrchestratorService, OrchestratorService>();
+        context.Services.AddSingleton<IToolService, ToolService>();
     }
 }
