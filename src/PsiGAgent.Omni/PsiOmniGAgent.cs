@@ -129,10 +129,19 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                                            - Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.
                                            - Each of your child agents should be generic for one type of tasks. They are supposed to be re-usable.
                                            - When you create the agent, the first task will be sent, so you don't need to send the task in another tool call.
+                                           - Find existing agent that may be suitable for a task so that you don't need to create a new agent.
 
                                            ## Minimize interaction with the user
                                            - Don't be verbose and keep asking for confirmation from the user.
                                            - Apply your best judgement to create agents without asking for permission.
+
+                                           ## Output Format
+                                           - Output a JSON object with the following fields:
+                                              - "Intermediate": the intermediate result of the agent.
+                                              - "Final": the final result of the agent.
+                                           - Either "Intermediate" or "Final" must be present, not both.
+                                           - If the task is not finished, you should output "Intermediate" with the intermediate result.
+                                           - If the task is finished, you should output "Final" with the final result.
                                            """,
         [RealizationStatus.Specialized] = "" // TODO:
     };
@@ -303,6 +312,7 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                 break;
             case RealizationStatus.Orchestrator:
                 kernel = GetKernel_Orchestrator();
+                systemPrompt += $"\n\n## Existing Child Agents:\n{GetAllChildAgents()}";
                 systemPrompt += $"\n\nYour agent Id is: <agentId>{this.GetGrainId()}</agentId>";
                 (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
                 OnChatDoneAsync_Orchestrator(chatHistory, preHistoryLength);
@@ -352,6 +362,17 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
         var toolDefinitions = _kernelFactory.FunctionRegistry!.GetAllToolDefinitions();
         // return JsonSerializer.Serialize(toolDefinitions);
         return ConvertJsonElementListToYaml(toolDefinitions);
+    }
+
+    private string GetAllChildAgents()
+    {
+        var children = State.ChildAgents.Values.ToList();
+
+        var serializer = new SerializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .Build();
+
+        return serializer.Serialize(children);
     }
 
     public static string ConvertJsonElementListToYaml(List<JsonElement> jsonElements)
@@ -607,18 +628,46 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
 
     private async Task ReplyAsync()
     {
+        if (State.RealizationStatus == RealizationStatus.Orchestrator)
+        {
+            var lastMessage = State.ChatHistory.Last()?.Content ?? string.Empty;
+            var lastOrchestratorMessage = JsonSerializer.Deserialize<OrchestratorMessage>(lastMessage);
+            if (lastOrchestratorMessage != null && !lastOrchestratorMessage.Final.IsNullOrEmpty())
+            {
+                Logger.LogInformation(lastOrchestratorMessage.ToString());
+            }
+        }
+
         if (State.UserAgentId.IsNullOrEmpty())
         {
             Logger.LogInformation("Result:\n{Result}", State.ChatHistory.Last()?.Content);
             return;
         }
 
-        await PublishAsync(GrainId.Parse(State.UserAgentId), new AgentMessageEvent
+        if (State.RealizationStatus == RealizationStatus.Specialized)
         {
-            TargetAgentId = State.UserAgentId,
-            CallId = State.CallId,
-            Content = State.ChatHistory.Last().Content
-        });
+            await PublishAsync(GrainId.Parse(State.UserAgentId), new AgentMessageEvent
+            {
+                TargetAgentId = State.UserAgentId,
+                CallId = State.CallId,
+                Content = State.ChatHistory.Last().Content
+            });
+        }
+        else if (State.RealizationStatus == RealizationStatus.Orchestrator)
+        {
+            var lastMessage = State.ChatHistory.Last()?.Content ?? string.Empty;
+            var lastOrchestratorMessage = JsonSerializer.Deserialize<OrchestratorMessage>(lastMessage);
+            if (lastOrchestratorMessage != null && !lastOrchestratorMessage.Final.IsNullOrEmpty())
+            {
+                await PublishAsync(GrainId.Parse(State.UserAgentId), new AgentMessageEvent
+                {
+                    TargetAgentId = State.UserAgentId,
+                    CallId = State.CallId,
+                    Content = lastOrchestratorMessage.Final
+                });
+            }
+            // TODO: Maybe add option to reply intermediate messages as well
+        }
     }
 
     protected override void GAgentTransitionState(

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace PsiGAgent.Omni;
 
 [GenerateSerializer]
@@ -14,4 +16,14 @@ public class ToolDefinition
     [Id(0)] public string Name { get; set; } = string.Empty;
     [Id(1)] public string Description { get; set; } = string.Empty;
     [Id(2)] public List<string> Parameters { get; set; } = new();
+}
+
+[GenerateSerializer]
+public class OrchestratorMessage
+{
+    [Id(0), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Intermediate { get; set; }
+
+    [Id(1), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Final { get; set; }
 }
