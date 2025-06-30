@@ -64,7 +64,7 @@ public class OrchestratorService : IOrchestratorService
     /// <summary>
     /// Create a new specialized agent with custom prompt and tools
     /// </summary>
-    [KernelFunction("create_and_call_agent")]
+    [KernelFunction("call_new_agent")]
     [Description("Creates a new agent with an initial task. The result will be notified to the given parent agent. Don't use call_agent to send the task again.")]
     public async Task<string> CreateAgentAsync(
         [Description("The ID of the parent agent.")]
