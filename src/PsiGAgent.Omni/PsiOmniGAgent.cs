@@ -108,7 +108,7 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                                          ## Output Format
                                          - Output a JSON object with the following fields:
                                             - "OperationMode": "ORCHESTRATOR" or "SPECIALIZED"
-                                            - "Description": a description of the agent's mode. Derive the description from the nature of the task given and the selected tools. DO NOT directly use the task description.
+                                            - "Description": a description of the agent can do. For SPECIALIZED agents: 1) Include the agent's capability derived from the selected tools. 2) DO NOT directly include the task without generalization.
                                             - "Tools": a list of names of the tools the agent will use (only for SPECIALIZED mode)
                                          - No other text or explanation.
                                          """,
@@ -283,8 +283,8 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
             {
                 AgentId = State.AgentId,
                 AgentType = State.RealizationStatus == RealizationStatus.Orchestrator ? "orchestrator" : "specialized",
-                Description = string.Empty,
-                Examples = new List<AgentExample>(),
+                Description = State.Description,
+                Examples = State.Examples,
                 Tools = State.Tools
             }
         });
@@ -626,48 +626,20 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
         return (chatHistory, preChatHistoryLength);
     }
 
-    private async Task ReplyAsync()
+    private async Task ReplyAsync(string finalResult)
     {
-        if (State.RealizationStatus == RealizationStatus.Orchestrator)
-        {
-            var lastMessage = State.ChatHistory.Last()?.Content ?? string.Empty;
-            var lastOrchestratorMessage = JsonSerializer.Deserialize<OrchestratorMessage>(lastMessage);
-            if (lastOrchestratorMessage != null && !lastOrchestratorMessage.Final.IsNullOrEmpty())
-            {
-                Logger.LogInformation(lastOrchestratorMessage.ToString());
-            }
-        }
-
         if (State.UserAgentId.IsNullOrEmpty())
         {
             Logger.LogInformation("Result:\n{Result}", State.ChatHistory.Last()?.Content);
             return;
         }
 
-        if (State.RealizationStatus == RealizationStatus.Specialized)
+        await PublishAsync(GrainId.Parse(State.UserAgentId), new AgentMessageEvent
         {
-            await PublishAsync(GrainId.Parse(State.UserAgentId), new AgentMessageEvent
-            {
-                TargetAgentId = State.UserAgentId,
-                CallId = State.CallId,
-                Content = State.ChatHistory.Last().Content
-            });
-        }
-        else if (State.RealizationStatus == RealizationStatus.Orchestrator)
-        {
-            var lastMessage = State.ChatHistory.Last()?.Content ?? string.Empty;
-            var lastOrchestratorMessage = JsonSerializer.Deserialize<OrchestratorMessage>(lastMessage);
-            if (lastOrchestratorMessage != null && !lastOrchestratorMessage.Final.IsNullOrEmpty())
-            {
-                await PublishAsync(GrainId.Parse(State.UserAgentId), new AgentMessageEvent
-                {
-                    TargetAgentId = State.UserAgentId,
-                    CallId = State.CallId,
-                    Content = lastOrchestratorMessage.Final
-                });
-            }
-            // TODO: Maybe add option to reply intermediate messages as well
-        }
+            TargetAgentId = State.UserAgentId,
+            CallId = State.CallId,
+            Content = finalResult
+        });
     }
 
     protected override void GAgentTransitionState(
@@ -712,6 +684,11 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                     var message = ChatMessage.CreateUserMessage(payload.Event.Content);
                     message.Metadata["CallId"] = payload.Event.CallId;
                     state.ChatHistory.Add(message);
+                    state.Examples.Add(new AgentExample
+                    {
+                        Request = payload.Event.Content,
+                        Response = String.Empty
+                    });
                     DoAsync(async () => await RunAsync($"User Message {payload.Event}"));
                 }
 
@@ -756,7 +733,42 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                 break;
             case GrowChatHistoryEvent payload:
                 state.ChatHistory.AddRange(payload.NewMessages);
-                DoAsync(ReplyAsync);
+                if (state.ChatHistory.Count <= 1)
+                    break;
+                var finalResult = string.Empty;
+
+                if (State.RealizationStatus == RealizationStatus.Specialized)
+                {
+                    finalResult = State.ChatHistory.Last().Content;
+                }
+                else if (State.RealizationStatus == RealizationStatus.Orchestrator)
+                {
+                    var lastMessage = State.ChatHistory.Last()?.Content ?? string.Empty;
+                    try
+                    {
+                        var lastOrchestratorMessage = JsonSerializer.Deserialize<OrchestratorMessage>(lastMessage);
+                        if (lastOrchestratorMessage != null && !lastOrchestratorMessage.Final.IsNullOrEmpty())
+                        {
+                            finalResult = lastOrchestratorMessage.Final;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex, "Failed to deserialize OrchestratorMessage: {Message}", lastMessage);
+                    }
+                }
+
+                if (!finalResult.IsNullOrEmpty())
+                {
+                    state.Examples.Last().Response = finalResult;
+                    DoAsync(async () =>
+                    {
+                        // TODO: Maybe update description.
+                        await DoSelfReportAsync();
+                        await ReplyAsync(finalResult);
+                    });
+                }
+
                 break;
         }
     }

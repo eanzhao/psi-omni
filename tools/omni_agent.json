@@ -1,0 +1,1165 @@
+[
+  {
+    "id": "omni.psi/85b59e4ce40942afac0526bdcfd1c4e3",
+    "depth": 0,
+    "state": {
+      "AgentId": "omni.psi/85b59e4ce40942afac0526bdcfd1c4e3",
+      "RealizationStatus": 1,
+      "SystemPrompt": "You are a helpful assistant that can interact with the user, analyze the user\u0027s request,\nbreak down the request into sub-tasks and create new agents or re-use existing agents to handle the sub-tasks.\nYou can create new agents with the create_agent function.\nYou can list the created agents with the list_created_agents function.\nYou can list the available tools with the list_available_tools function.\n\n## What you are supposed to do\n- You are the orchestrator of the agents.\n- You always try to understand the user\u0027s request and break it down into sub-tasks.\n- You are responsible for creating new agents and managing them.\n- You are responsible for the overall flow of the conversation.\n- You DON\u0027T use tools other than those for managing agents.\n\n\n\n## Rules for creating agents\n- Agents will use the tools given to them.\n- Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.\n\n## Minimize interaction with the user\n- Don\u0027t be verbose and keep asking for confirmation from the user.\n- Apply your best judgement to create agents without asking for permission.\nYour agent id is: omni.psi/85b59e4ce40942afac0526bdcfd1c4e3",
+      "Tools": [],
+      "ChildAgents": {
+        "omni.psi/557df6d6c134460c8bb542cf8e735718": {
+          "AgentId": "omni.psi/557df6d6c134460c8bb542cf8e735718",
+          "AgentType": "orchestrator",
+          "Description": "The agent will break down the task into sub-tasks: retrieving the GDP of New York state, retrieving the total US GDP, and calculating the percentage contribution of New York state to the US GDP.",
+          "Examples": [
+            {
+              "Request": "Find the GDP of New York state in 2024 and the total US GDP in 2024, then calculate the percentage contribution of New York state to the US GDP.",
+              "Response": "The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP."
+            }
+          ],
+          "Tools": []
+        },
+        "omni.psi/dbc414fa053e400dbc84d0b531c8f2ae": {
+          "AgentId": "omni.psi/dbc414fa053e400dbc84d0b531c8f2ae",
+          "AgentType": "orchestrator",
+          "Description": "The agent will break down the task into sub-tasks: retrieving California\u0027s GDP, retrieving the total US GDP, and calculating the percentage contribution of California to the US GDP.",
+          "Examples": [
+            {
+              "Request": "Find the GDP of California in 2024 and the total US GDP in 2024, then calculate the percentage contribution of California to the US GDP.",
+              "Response": "California\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP."
+            }
+          ],
+          "Tools": []
+        }
+      },
+      "Description": "The agent can break down the task into sub-tasks to calculate the percentage of US GDP contributed by New York state in 2024. It will retrieve the GDP of New York state and the US GDP, then calculate the percentage.",
+      "Examples": [
+        {
+          "Request": "Calculate what percentage of US GDP was contributed by New York state in 2024",
+          "Response": "The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP."
+        },
+        {
+          "Request": "What about California?",
+          "Response": "California\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP."
+        }
+      ],
+      "Configuration": {
+        "Temperature": 0.7,
+        "MaxTokens": 1000,
+        "Model": {
+          "ModelId": "gpt-4o-steven",
+          "ApiKey": "***",
+          "BaseUrl": "***",
+          "DeploymentName": "***",
+          "Endpoint": "***",
+          "ApiVersion": null,
+          "IsAzureOpenAI": true
+        }
+      },
+      "UserAgentId": null,
+      "CallId": "ce4f369a-f1b2-4d7e-928b-3b873339175d",
+      "ChatHistory": [
+        {
+          "Role": "user",
+          "Content": "Calculate what percentage of US GDP was contributed by New York state in 2024",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:53:05.360661Z",
+          "Metadata": {
+            "CallId": "7796d54b-c91b-4397-88c2-af12a422a72e"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:53:17.580042Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[{\u0022Id\u0022:\u0022call_F5rnWTvbqY4Yj8mv1oGncudo\u0022,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022{\\u0022parentAgentId\\u0022:\\u0022omni.psi/85b59e4ce40942afac0526bdcfd1c4e3\\u0022,\\u0022callId\\u0022:\\u0022calculate_ny_gdp_percentage\\u0022,\\u0022task\\u0022:\\u0022Find the GDP of New York state in 2024 and the total US GDP in 2024, then calculate the percentage contribution of New York state to the US GDP.\\u0022}\u0022}],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_F5rnWTvbqY4Yj8mv1oGncudo\u0022,\u0022PluginName\u0022:\u0022AgentServices\u0022,\u0022FunctionName\u0022:\u0022call_new_agent\u0022,\u0022Arguments\u0022:{\u0022parentAgentId\u0022:\u0022omni.psi/85b59e4ce40942afac0526bdcfd1c4e3\u0022,\u0022callId\u0022:\u0022calculate_ny_gdp_percentage\u0022,\u0022task\u0022:\u0022Find the GDP of New York state in 2024 and the total US GDP in 2024, then calculate the percentage contribution of New York state to the US GDP.\u0022}}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6QKDTcMmvTcn6ve5z7jSxmFtioi\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:53:12\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:91,\u0022InputTokenCount\u0022:683,\u0022TotalTokenCount\u0022:774,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022ToolCalls\u0022,\u0022ContentTokenLogProbabilities\u0022:[],\u0022ChatResponseMessage.FunctionToolCalls\u0022:[{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022eyJwYXJlbnRBZ2VudElkIjoib21uaS5wc2kvODViNTllNGNlNDA5NDJhZmFjMDUyNmJkY2ZkMWM0ZTMiLCJjYWxsSWQiOiJjYWxjdWxhdGVfbnlfZ2RwX3BlcmNlbnRhZ2UiLCJ0YXNrIjoiRmluZCB0aGUgR0RQIG9mIE5ldyBZb3JrIHN0YXRlIGluIDIwMjQgYW5kIHRoZSB0b3RhbCBVUyBHRFAgaW4gMjAyNCwgdGhlbiBjYWxjdWxhdGUgdGhlIHBlcmNlbnRhZ2UgY29udHJpYnV0aW9uIG9mIE5ldyBZb3JrIHN0YXRlIHRvIHRoZSBVUyBHRFAuIn0=\u0022,\u0022Id\u0022:\u0022call_F5rnWTvbqY4Yj8mv1oGncudo\u0022}]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "Created the following agent and sent the subtask $calculate_ny_gdp_percentage to it:\n{\u0022AgentId\u0022:\u0022omni.psi/557df6d6c134460c8bb542cf8e735718\u0022,\u0022AgentType\u0022:\u0022\u0022,\u0022Description\u0022:\u0022\u0022,\u0022Examples\u0022:[{\u0022Request\u0022:\u0022Find the GDP of New York state in 2024 and the total US GDP in 2024, then calculate the percentage contribution of New York state to the US GDP.\u0022,\u0022Response\u0022:\u0022\u0022}],\u0022Tools\u0022:[]}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:53:17.580182Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_F5rnWTvbqY4Yj8mv1oGncudo",
+            "FunctionName": "call_new_agent"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Intermediate\u0022:\u0022The task of calculating the percentage contribution of New York state to the US GDP in 2024 has been delegated to a new agent.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:53:17.580346Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Intermediate\\u0022:\\u0022The task of calculating the percentage contribution of New York state to the US GDP in 2024 has been delegated to a new agent.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6QMaVQAl6VMyX675gOr4vJGQUm2\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:53:14\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:33,\u0022InputTokenCount\u0022:882,\u0022TotalTokenCount\u0022:915,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "assistant",
+          "Content": "Received reply for callId (calculate_ny_gdp_percentage): The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:13.451266Z",
+          "Metadata": {
+            "CallId": "calculate_ny_gdp_percentage"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Final\u0022:\u0022The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:15.37933Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Final\\u0022:\\u0022The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6SI3lJ1FFbMIOAhU47ZH9QFYS7Z\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:55:14\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:51,\u0022InputTokenCount\u0022:1148,\u0022TotalTokenCount\u0022:1199,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "assistant",
+          "Content": "Received reply for callId (calculate_ny_gdp_percentage): The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:15.400569Z",
+          "Metadata": {
+            "CallId": "calculate_ny_gdp_percentage"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Final\u0022:\u0022The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:16.410484Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Final\\u0022:\\u0022The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6SJ9KynihgJFis78rrhi23tvZ7b\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:55:15\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:51,\u0022InputTokenCount\u0022:1263,\u0022TotalTokenCount\u0022:1314,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "user",
+          "Content": "What about California?",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:38.922664Z",
+          "Metadata": {
+            "CallId": "ce4f369a-f1b2-4d7e-928b-3b873339175d"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:18.312104Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[{\u0022Id\u0022:\u0022call_rquuPr6cZ9eeih8tsCYBYlPb\u0022,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022{\\u0022parentAgentId\\u0022:\\u0022omni.psi/85b59e4ce40942afac0526bdcfd1c4e3\\u0022,\\u0022callId\\u0022:\\u0022calculate_ca_gdp_percentage\\u0022,\\u0022task\\u0022:\\u0022Find the GDP of California in 2024 and the total US GDP in 2024, then calculate the percentage contribution of California to the US GDP.\\u0022}\u0022}],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_rquuPr6cZ9eeih8tsCYBYlPb\u0022,\u0022PluginName\u0022:\u0022AgentServices\u0022,\u0022FunctionName\u0022:\u0022call_new_agent\u0022,\u0022Arguments\u0022:{\u0022parentAgentId\u0022:\u0022omni.psi/85b59e4ce40942afac0526bdcfd1c4e3\u0022,\u0022callId\u0022:\u0022calculate_ca_gdp_percentage\u0022,\u0022task\u0022:\u0022Find the GDP of California in 2024 and the total US GDP in 2024, then calculate the percentage contribution of California to the US GDP.\u0022}}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6SiyEWnhGYZ7aXYK4L5sn9I7kPU\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:55:40\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:86,\u0022InputTokenCount\u0022:1324,\u0022TotalTokenCount\u0022:1410,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022ToolCalls\u0022,\u0022ContentTokenLogProbabilities\u0022:[],\u0022ChatResponseMessage.FunctionToolCalls\u0022:[{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022eyJwYXJlbnRBZ2VudElkIjoib21uaS5wc2kvODViNTllNGNlNDA5NDJhZmFjMDUyNmJkY2ZkMWM0ZTMiLCJjYWxsSWQiOiJjYWxjdWxhdGVfY2FfZ2RwX3BlcmNlbnRhZ2UiLCJ0YXNrIjoiRmluZCB0aGUgR0RQIG9mIENhbGlmb3JuaWEgaW4gMjAyNCBhbmQgdGhlIHRvdGFsIFVTIEdEUCBpbiAyMDI0LCB0aGVuIGNhbGN1bGF0ZSB0aGUgcGVyY2VudGFnZSBjb250cmlidXRpb24gb2YgQ2FsaWZvcm5pYSB0byB0aGUgVVMgR0RQLiJ9\u0022,\u0022Id\u0022:\u0022call_rquuPr6cZ9eeih8tsCYBYlPb\u0022}]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "Created the following agent and sent the subtask $calculate_ca_gdp_percentage to it:\n{\u0022AgentId\u0022:\u0022omni.psi/dbc414fa053e400dbc84d0b531c8f2ae\u0022,\u0022AgentType\u0022:\u0022\u0022,\u0022Description\u0022:\u0022\u0022,\u0022Examples\u0022:[{\u0022Request\u0022:\u0022Find the GDP of California in 2024 and the total US GDP in 2024, then calculate the percentage contribution of California to the US GDP.\u0022,\u0022Response\u0022:\u0022\u0022}],\u0022Tools\u0022:[]}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:18.312106Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_rquuPr6cZ9eeih8tsCYBYlPb",
+            "FunctionName": "call_new_agent"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Intermediate\u0022:\u0022The task of calculating the percentage contribution of California to the US GDP in 2024 has been delegated to a new agent.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:18.313868Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Intermediate\\u0022:\\u0022The task of calculating the percentage contribution of California to the US GDP in 2024 has been delegated to a new agent.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6SkVjbk3mjWeWbCqdNpMVixBjzh\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:55:42\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:31,\u0022InputTokenCount\u0022:1513,\u0022TotalTokenCount\u0022:1544,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "assistant",
+          "Content": "Received reply for callId (calculate_ca_gdp_percentage): California\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:52.334619Z",
+          "Metadata": {
+            "CallId": "calculate_ca_gdp_percentage"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Final\u0022:\u0022California\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:53.255874Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Final\\u0022:\\u0022California\\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6TsN8rRtG2pHfKiO7NTldF5jwQ1\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:52\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:46,\u0022InputTokenCount\u0022:1758,\u0022TotalTokenCount\u0022:1804,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "assistant",
+          "Content": "Received reply for callId (calculate_ca_gdp_percentage): California\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:53.274101Z",
+          "Metadata": {
+            "CallId": "calculate_ca_gdp_percentage"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Final\u0022:\u0022California\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:54.305307Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Final\\u0022:\\u0022California\\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6TtlHWFOXob890SuaFFoKHMyuOS\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:53\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:46,\u0022InputTokenCount\u0022:1862,\u0022TotalTokenCount\u0022:1908,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:1664}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        }
+      ],
+      "Children": [],
+      "Parent": "Aevatar.Core.PublishingGAgent/04a83c39f54e438f824d1094cec72a9c",
+      "GAgentCreator": null
+    }
+  },
+  {
+    "id": "omni.psi/557df6d6c134460c8bb542cf8e735718",
+    "depth": 1,
+    "state": {
+      "AgentId": "omni.psi/557df6d6c134460c8bb542cf8e735718",
+      "RealizationStatus": 1,
+      "SystemPrompt": "You are a helpful assistant that can interact with the user, analyze the user\u0027s request,\nbreak down the request into sub-tasks and create new agents or re-use existing agents to handle the sub-tasks.\nYou can create new agents with the create_agent function.\nYou can list the created agents with the list_created_agents function.\nYou can list the available tools with the list_available_tools function.\n\n## What you are supposed to do\n- You are the orchestrator of the agents.\n- You always try to understand the user\u0027s request and break it down into sub-tasks.\n- You are responsible for creating new agents and managing them.\n- You are responsible for the overall flow of the conversation.\n- You DON\u0027T use tools other than those for managing agents.\n\n\n\n## Rules for creating agents\n- Agents will use the tools given to them.\n- Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.\n\n## Minimize interaction with the user\n- Don\u0027t be verbose and keep asking for confirmation from the user.\n- Apply your best judgement to create agents without asking for permission.\nYour agent id is: omni.psi/557df6d6c134460c8bb542cf8e735718",
+      "Tools": [],
+      "ChildAgents": {
+        "omni.psi/e34f2a44dd7944e08585ae98dbc2445f": {
+          "AgentId": "omni.psi/e34f2a44dd7944e08585ae98dbc2445f",
+          "AgentType": "specialized",
+          "Description": "The agent can retrieve the GDP for a specific US state in 2024 using the state code.",
+          "Examples": [
+            {
+              "Request": "Find the GDP of New York state in 2024.",
+              "Response": "The GDP of New York State in 2024 is estimated to be $2,200,000 million (or $2.2 trillion)."
+            },
+            {
+              "Request": "Find the GDP of New York state in 2024.",
+              "Response": "The GDP of New York State in 2024 is $2,200,000 million (or $2.2 trillion)."
+            }
+          ],
+          "Tools": [
+            "DemoPlugin.GetStateGDP2024"
+          ]
+        },
+        "omni.psi/d2d1d1c72a8440ae93c62f9ac6942727": {
+          "AgentId": "omni.psi/d2d1d1c72a8440ae93c62f9ac6942727",
+          "AgentType": "specialized",
+          "Description": "The agent can retrieve the total US GDP for the year 2024.",
+          "Examples": [
+            {
+              "Request": "Find the total US GDP in 2024.",
+              "Response": ""
+            }
+          ],
+          "Tools": [
+            "DemoPlugin.GetUSGDP2024"
+          ]
+        }
+      },
+      "Description": "The agent will break down the task into sub-tasks: retrieving the GDP of New York state, retrieving the total US GDP, and calculating the percentage contribution of New York state to the US GDP.",
+      "Examples": [
+        {
+          "Request": "Find the GDP of New York state in 2024 and the total US GDP in 2024, then calculate the percentage contribution of New York state to the US GDP.",
+          "Response": "The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP."
+        }
+      ],
+      "Configuration": {
+        "Temperature": 0.7,
+        "MaxTokens": 1000,
+        "Model": {
+          "ModelId": "gpt-4o-steven",
+          "ApiKey": "***",
+          "BaseUrl": "***",
+          "DeploymentName": "***",
+          "Endpoint": "***",
+          "ApiVersion": null,
+          "IsAzureOpenAI": true
+        }
+      },
+      "UserAgentId": "omni.psi/85b59e4ce40942afac0526bdcfd1c4e3",
+      "CallId": "calculate_ny_gdp_percentage",
+      "ChatHistory": [
+        {
+          "Role": "user",
+          "Content": "Find the GDP of New York state in 2024 and the total US GDP in 2024, then calculate the percentage contribution of New York state to the US GDP.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:53:15.156692Z",
+          "Metadata": {
+            "CallId": "calculate_ny_gdp_percentage"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:53:31.69946Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[{\u0022Id\u0022:\u0022call_v6r5FfAhbOHNxGazLYXq0um0\u0022,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022{\\u0022parentAgentId\\u0022: \\u0022omni.psi/557df6d6c134460c8bb542cf8e735718\\u0022, \\u0022callId\\u0022: \\u0022task_gdp_ny\\u0022, \\u0022task\\u0022: \\u0022Find the GDP of New York state in 2024.\\u0022}\u0022},{\u0022Id\u0022:\u0022call_IfRHckYa6qiU7CfgcJvomLE8\u0022,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022{\\u0022parentAgentId\\u0022: \\u0022omni.psi/557df6d6c134460c8bb542cf8e735718\\u0022, \\u0022callId\\u0022: \\u0022task_gdp_us\\u0022, \\u0022task\\u0022: \\u0022Find the total US GDP in 2024.\\u0022}\u0022}],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_v6r5FfAhbOHNxGazLYXq0um0\u0022,\u0022PluginName\u0022:\u0022AgentServices\u0022,\u0022FunctionName\u0022:\u0022call_new_agent\u0022,\u0022Arguments\u0022:{\u0022parentAgentId\u0022:\u0022omni.psi/557df6d6c134460c8bb542cf8e735718\u0022,\u0022callId\u0022:\u0022task_gdp_ny\u0022,\u0022task\u0022:\u0022Find the GDP of New York state in 2024.\u0022}},{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_IfRHckYa6qiU7CfgcJvomLE8\u0022,\u0022PluginName\u0022:\u0022AgentServices\u0022,\u0022FunctionName\u0022:\u0022call_new_agent\u0022,\u0022Arguments\u0022:{\u0022parentAgentId\u0022:\u0022omni.psi/557df6d6c134460c8bb542cf8e735718\u0022,\u0022callId\u0022:\u0022task_gdp_us\u0022,\u0022task\u0022:\u0022Find the total US GDP in 2024.\u0022}}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6QXFAFGKE6VwqEPlHqvO9e3IE4e\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:53:25\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:140,\u0022InputTokenCount\u0022:699,\u0022TotalTokenCount\u0022:839,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022ToolCalls\u0022,\u0022ContentTokenLogProbabilities\u0022:[],\u0022ChatResponseMessage.FunctionToolCalls\u0022:[{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022eyJwYXJlbnRBZ2VudElkIjogIm9tbmkucHNpLzU1N2RmNmQ2YzEzNDQ2MGM4YmI1NDJjZjhlNzM1NzE4IiwgImNhbGxJZCI6ICJ0YXNrX2dkcF9ueSIsICJ0YXNrIjogIkZpbmQgdGhlIEdEUCBvZiBOZXcgWW9yayBzdGF0ZSBpbiAyMDI0LiJ9\u0022,\u0022Id\u0022:\u0022call_v6r5FfAhbOHNxGazLYXq0um0\u0022},{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022eyJwYXJlbnRBZ2VudElkIjogIm9tbmkucHNpLzU1N2RmNmQ2YzEzNDQ2MGM4YmI1NDJjZjhlNzM1NzE4IiwgImNhbGxJZCI6ICJ0YXNrX2dkcF91cyIsICJ0YXNrIjogIkZpbmQgdGhlIHRvdGFsIFVTIEdEUCBpbiAyMDI0LiJ9\u0022,\u0022Id\u0022:\u0022call_IfRHckYa6qiU7CfgcJvomLE8\u0022}]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "Created the following agent and sent the subtask $task_gdp_ny to it:\n{\u0022AgentId\u0022:\u0022omni.psi/e34f2a44dd7944e08585ae98dbc2445f\u0022,\u0022AgentType\u0022:\u0022\u0022,\u0022Description\u0022:\u0022\u0022,\u0022Examples\u0022:[{\u0022Request\u0022:\u0022Find the GDP of New York state in 2024.\u0022,\u0022Response\u0022:\u0022\u0022}],\u0022Tools\u0022:[]}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:53:31.699463Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_v6r5FfAhbOHNxGazLYXq0um0",
+            "FunctionName": "call_new_agent"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "Created the following agent and sent the subtask $task_gdp_us to it:\n{\u0022AgentId\u0022:\u0022omni.psi/d2d1d1c72a8440ae93c62f9ac6942727\u0022,\u0022AgentType\u0022:\u0022\u0022,\u0022Description\u0022:\u0022\u0022,\u0022Examples\u0022:[{\u0022Request\u0022:\u0022Find the total US GDP in 2024.\u0022,\u0022Response\u0022:\u0022\u0022}],\u0022Tools\u0022:[]}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:53:31.699469Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_IfRHckYa6qiU7CfgcJvomLE8",
+            "FunctionName": "call_new_agent"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Intermediate\u0022:\u0022Agents have been created to find the GDP of New York state and the total US GDP for 2024. Awaiting their results.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:53:31.69953Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Intermediate\\u0022:\\u0022Agents have been created to find the GDP of New York state and the total US GDP for 2024. Awaiting their results.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6QaHIn8kTcZbLehRtLjkhhiTo33\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:53:28\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:33,\u0022InputTokenCount\u0022:1012,\u0022TotalTokenCount\u0022:1045,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "assistant",
+          "Content": "Received reply for callId (task_gdp_us): The total US GDP in 2024 is estimated to be $28,500,000 million, or $28.5 trillion.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:00.496153Z",
+          "Metadata": {
+            "CallId": "task_gdp_us"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:06.391676Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[{\u0022Id\u0022:\u0022call_jzPcof8Qew93zcENPx1RRw0H\u0022,\u0022FunctionName\u0022:\u0022AgentServices-call_agent\u0022,\u0022FunctionArguments\u0022:\u0022{\\u0022parentAgentId\\u0022:\\u0022omni.psi/557df6d6c134460c8bb542cf8e735718\\u0022,\\u0022agentId\\u0022:\\u0022omni.psi/e34f2a44dd7944e08585ae98dbc2445f\\u0022,\\u0022callId\\u0022:\\u0022task_gdp_ny\\u0022,\\u0022message\\u0022:\\u0022Find the GDP of New York state in 2024.\\u0022}\u0022}],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_jzPcof8Qew93zcENPx1RRw0H\u0022,\u0022PluginName\u0022:\u0022AgentServices\u0022,\u0022FunctionName\u0022:\u0022call_agent\u0022,\u0022Arguments\u0022:{\u0022parentAgentId\u0022:\u0022omni.psi/557df6d6c134460c8bb542cf8e735718\u0022,\u0022agentId\u0022:\u0022omni.psi/e34f2a44dd7944e08585ae98dbc2445f\u0022,\u0022callId\u0022:\u0022task_gdp_ny\u0022,\u0022message\u0022:\u0022Find the GDP of New York state in 2024.\u0022}}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6S5WeRSVi2fJpiDhMXXg7JUF5d6\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:55:01\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:88,\u0022InputTokenCount\u0022:1263,\u0022TotalTokenCount\u0022:1351,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022ToolCalls\u0022,\u0022ContentTokenLogProbabilities\u0022:[],\u0022ChatResponseMessage.FunctionToolCalls\u0022:[{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022AgentServices-call_agent\u0022,\u0022FunctionArguments\u0022:\u0022eyJwYXJlbnRBZ2VudElkIjoib21uaS5wc2kvNTU3ZGY2ZDZjMTM0NDYwYzhiYjU0MmNmOGU3MzU3MTgiLCJhZ2VudElkIjoib21uaS5wc2kvZTM0ZjJhNDRkZDc5NDRlMDg1ODVhZTk4ZGJjMjQ0NWYiLCJjYWxsSWQiOiJ0YXNrX2dkcF9ueSIsIm1lc3NhZ2UiOiJGaW5kIHRoZSBHRFAgb2YgTmV3IFlvcmsgc3RhdGUgaW4gMjAyNC4ifQ==\u0022,\u0022Id\u0022:\u0022call_jzPcof8Qew93zcENPx1RRw0H\u0022}]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "Message sent for callId: task_gdp_ny",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:06.391678Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_jzPcof8Qew93zcENPx1RRw0H",
+            "FunctionName": "call_agent"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Intermediate\u0022:\u0022The total US GDP for 2024 has been retrieved as $28.5 trillion. Awaiting the GDP of New York state for 2024 to calculate the percentage contribution.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:06.391785Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Intermediate\\u0022:\\u0022The total US GDP for 2024 has been retrieved as $28.5 trillion. Awaiting the GDP of New York state for 2024 to calculate the percentage contribution.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6S73BU2FR10I1Ver8zA1VMw5K0V\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:55:03\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:42,\u0022InputTokenCount\u0022:1371,\u0022TotalTokenCount\u0022:1413,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "assistant",
+          "Content": "Received reply for callId (task_gdp_ny): The GDP of New York State in 2024 is estimated to be $2,200,000 million (or $2.2 trillion).",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:09.2592Z",
+          "Metadata": {
+            "CallId": "task_gdp_ny"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Final\u0022:\u0022The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:13.338043Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Final\\u0022:\\u0022The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6SF22edk4yQ1bkZY9pEnTe80gpo\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:55:11\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:51,\u0022InputTokenCount\u0022:1460,\u0022TotalTokenCount\u0022:1511,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "assistant",
+          "Content": "Received reply for callId (task_gdp_ny): The GDP of New York State in 2024 is $2,200,000 million (or $2.2 trillion).",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:13.372702Z",
+          "Metadata": {
+            "CallId": "task_gdp_ny"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Final\u0022:\u0022The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:14.823104Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Final\\u0022:\\u0022The GDP of New York State in 2024 is $2.2 trillion, and the total US GDP is $28.5 trillion. New York State contributes approximately 7.72% to the total US GDP.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6SHUiW03iIFRym7K7KbDHUiRYxK\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:55:13\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:51,\u0022InputTokenCount\u0022:1628,\u0022TotalTokenCount\u0022:1679,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        }
+      ],
+      "Children": [],
+      "Parent": "Aevatar.Core.PublishingGAgent/85b59e4ce40942afac0526bdcfd1c4e3",
+      "GAgentCreator": null
+    }
+  },
+  {
+    "id": "omni.psi/e34f2a44dd7944e08585ae98dbc2445f",
+    "depth": 2,
+    "state": {
+      "AgentId": "omni.psi/e34f2a44dd7944e08585ae98dbc2445f",
+      "RealizationStatus": 2,
+      "SystemPrompt": "You are a helpful assistant that can interact with the user, analyze the user\u0027s request,\nbreak down the request into sub-tasks and create new agents or re-use existing agents to handle the sub-tasks.\nYou can create new agents with the create_agent function.\nYou can list the created agents with the list_created_agents function.\nYou can list the available tools with the list_available_tools function.\n\n## What you are supposed to do\n- You are the orchestrator of the agents.\n- You always try to understand the user\u0027s request and break it down into sub-tasks.\n- You are responsible for creating new agents and managing them.\n- You are responsible for the overall flow of the conversation.\n- You DON\u0027T use tools other than those for managing agents.\n\n\n\n## Rules for creating agents\n- Agents will use the tools given to them.\n- Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.\n\n## Minimize interaction with the user\n- Don\u0027t be verbose and keep asking for confirmation from the user.\n- Apply your best judgement to create agents without asking for permission.\nYour agent id is: omni.psi/e34f2a44dd7944e08585ae98dbc2445f",
+      "Tools": [
+        "DemoPlugin.GetStateGDP2024"
+      ],
+      "ChildAgents": {},
+      "Description": "The agent can retrieve the GDP for a specific US state in 2024 using the state code.",
+      "Examples": [
+        {
+          "Request": "Find the GDP of New York state in 2024.",
+          "Response": "The GDP of New York State in 2024 is estimated to be $2,200,000 million (or $2.2 trillion)."
+        },
+        {
+          "Request": "Find the GDP of New York state in 2024.",
+          "Response": "The GDP of New York State in 2024 is $2,200,000 million (or $2.2 trillion)."
+        }
+      ],
+      "Configuration": {
+        "Temperature": 0.7,
+        "MaxTokens": 1000,
+        "Model": {
+          "ModelId": "gpt-4o-steven",
+          "ApiKey": "***",
+          "BaseUrl": "***",
+          "DeploymentName": "***",
+          "Endpoint": "***",
+          "ApiVersion": null,
+          "IsAzureOpenAI": true
+        }
+      },
+      "UserAgentId": "omni.psi/557df6d6c134460c8bb542cf8e735718",
+      "CallId": "task_gdp_ny",
+      "ChatHistory": [
+        {
+          "Role": "user",
+          "Content": "Find the GDP of New York state in 2024.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:53:29.51533Z",
+          "Metadata": {
+            "CallId": "task_gdp_ny"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:54:08.84461Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[{\u0022Id\u0022:\u0022call_0eF9d5oi1MfIkFJZtpsF78h5\u0022,\u0022FunctionName\u0022:\u0022Tools-GetStateGDP2024\u0022,\u0022FunctionArguments\u0022:\u0022{\\u0022stateCode\\u0022:\\u0022NY\\u0022}\u0022}],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_0eF9d5oi1MfIkFJZtpsF78h5\u0022,\u0022PluginName\u0022:\u0022Tools\u0022,\u0022FunctionName\u0022:\u0022GetStateGDP2024\u0022,\u0022Arguments\u0022:{\u0022stateCode\u0022:\u0022NY\u0022}}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6R1aMG5OqXaOJyPia2fS286k0tV\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:53:55\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:21,\u0022InputTokenCount\u0022:85,\u0022TotalTokenCount\u0022:106,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022ToolCalls\u0022,\u0022ContentTokenLogProbabilities\u0022:[],\u0022ChatResponseMessage.FunctionToolCalls\u0022:[{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022Tools-GetStateGDP2024\u0022,\u0022FunctionArguments\u0022:\u0022eyJzdGF0ZUNvZGUiOiJOWSJ9\u0022,\u0022Id\u0022:\u0022call_0eF9d5oi1MfIkFJZtpsF78h5\u0022}]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "2200000",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:54:08.844614Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_0eF9d5oi1MfIkFJZtpsF78h5",
+            "FunctionName": "GetStateGDP2024"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "The GDP of New York State in 2024 is estimated to be $2,200,000 million (or $2.2 trillion).",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:54:08.844655Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022The GDP of New York State in 2024 is estimated to be $2,200,000 million (or $2.2 trillion).\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6RBLEh2azp3DR8AQFvnS1wxx7Bf\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:54:05\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:31,\u0022InputTokenCount\u0022:121,\u0022TotalTokenCount\u0022:152,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "user",
+          "Content": "Find the GDP of New York state in 2024.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:06.391109Z",
+          "Metadata": {
+            "CallId": "task_gdp_ny"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "The GDP of New York State in 2024 is $2,200,000 million (or $2.2 trillion).",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:55:11.728537Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022The GDP of New York State in 2024 is $2,200,000 million (or $2.2 trillion).\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6SDl5Fe3yDgwJevdXVTlUQkyu1O\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:55:09\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:28,\u0022InputTokenCount\u0022:170,\u0022TotalTokenCount\u0022:198,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        }
+      ],
+      "Children": [],
+      "Parent": "Aevatar.Core.PublishingGAgent/557df6d6c134460c8bb542cf8e735718",
+      "GAgentCreator": null
+    }
+  },
+  {
+    "id": "omni.psi/d2d1d1c72a8440ae93c62f9ac6942727",
+    "depth": 2,
+    "state": {
+      "AgentId": "omni.psi/d2d1d1c72a8440ae93c62f9ac6942727",
+      "RealizationStatus": 2,
+      "SystemPrompt": "You are a helpful assistant that can interact with the user, analyze the user\u0027s request,\nbreak down the request into sub-tasks and create new agents or re-use existing agents to handle the sub-tasks.\nYou can create new agents with the create_agent function.\nYou can list the created agents with the list_created_agents function.\nYou can list the available tools with the list_available_tools function.\n\n## What you are supposed to do\n- You are the orchestrator of the agents.\n- You always try to understand the user\u0027s request and break it down into sub-tasks.\n- You are responsible for creating new agents and managing them.\n- You are responsible for the overall flow of the conversation.\n- You DON\u0027T use tools other than those for managing agents.\n\n\n\n## Rules for creating agents\n- Agents will use the tools given to them.\n- Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.\n\n## Minimize interaction with the user\n- Don\u0027t be verbose and keep asking for confirmation from the user.\n- Apply your best judgement to create agents without asking for permission.\nYour agent id is: omni.psi/d2d1d1c72a8440ae93c62f9ac6942727",
+      "Tools": [
+        "DemoPlugin.GetUSGDP2024"
+      ],
+      "ChildAgents": {},
+      "Description": "The agent can retrieve the total US GDP for the year 2024.",
+      "Examples": [
+        {
+          "Request": "Find the total US GDP in 2024.",
+          "Response": "The total US GDP in 2024 is estimated to be $28,500,000 million, or $28.5 trillion."
+        }
+      ],
+      "Configuration": {
+        "Temperature": 0.7,
+        "MaxTokens": 1000,
+        "Model": {
+          "ModelId": "gpt-4o-steven",
+          "ApiKey": "***",
+          "BaseUrl": "***",
+          "DeploymentName": "***",
+          "Endpoint": "***",
+          "ApiVersion": null,
+          "IsAzureOpenAI": true
+        }
+      },
+      "UserAgentId": "omni.psi/557df6d6c134460c8bb542cf8e735718",
+      "CallId": "task_gdp_us",
+      "ChatHistory": [
+        {
+          "Role": "user",
+          "Content": "Find the total US GDP in 2024.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:53:34.391546Z",
+          "Metadata": {
+            "CallId": "task_gdp_us"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:54:15.526354Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[{\u0022Id\u0022:\u0022call_0x8m9gDuPlR5qUbC0Git55At\u0022,\u0022FunctionName\u0022:\u0022Tools-GetUSGDP2024\u0022,\u0022FunctionArguments\u0022:\u0022{}\u0022}],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_0x8m9gDuPlR5qUbC0Git55At\u0022,\u0022PluginName\u0022:\u0022Tools\u0022,\u0022FunctionName\u0022:\u0022GetUSGDP2024\u0022,\u0022Arguments\u0022:{}}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6R7O9AyMxdvBvwnIdBV2RyEzVmk\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:54:01\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:16,\u0022InputTokenCount\u0022:55,\u0022TotalTokenCount\u0022:71,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022ToolCalls\u0022,\u0022ContentTokenLogProbabilities\u0022:[],\u0022ChatResponseMessage.FunctionToolCalls\u0022:[{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022Tools-GetUSGDP2024\u0022,\u0022FunctionArguments\u0022:\u0022e30=\u0022,\u0022Id\u0022:\u0022call_0x8m9gDuPlR5qUbC0Git55At\u0022}]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "28500000",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:54:15.526363Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_0x8m9gDuPlR5qUbC0Git55At",
+            "FunctionName": "GetUSGDP2024"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "The total US GDP in 2024 is estimated to be $28,500,000 million, or $28.5 trillion.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:54:15.526483Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022The total US GDP in 2024 is estimated to be $28,500,000 million, or $28.5 trillion.\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6RB5sCXNNIZ5LyhwsyVzTkE1PkR\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:54:05\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:29,\u0022InputTokenCount\u0022:86,\u0022TotalTokenCount\u0022:115,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        }
+      ],
+      "Children": [],
+      "Parent": "Aevatar.Core.PublishingGAgent/557df6d6c134460c8bb542cf8e735718",
+      "GAgentCreator": null
+    }
+  },
+  {
+    "id": "omni.psi/dbc414fa053e400dbc84d0b531c8f2ae",
+    "depth": 1,
+    "state": {
+      "AgentId": "omni.psi/dbc414fa053e400dbc84d0b531c8f2ae",
+      "RealizationStatus": 1,
+      "SystemPrompt": "You are a helpful assistant that can interact with the user, analyze the user\u0027s request,\nbreak down the request into sub-tasks and create new agents or re-use existing agents to handle the sub-tasks.\nYou can create new agents with the create_agent function.\nYou can list the created agents with the list_created_agents function.\nYou can list the available tools with the list_available_tools function.\n\n## What you are supposed to do\n- You are the orchestrator of the agents.\n- You always try to understand the user\u0027s request and break it down into sub-tasks.\n- You are responsible for creating new agents and managing them.\n- You are responsible for the overall flow of the conversation.\n- You DON\u0027T use tools other than those for managing agents.\n\n\n\n## Rules for creating agents\n- Agents will use the tools given to them.\n- Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.\n\n## Minimize interaction with the user\n- Don\u0027t be verbose and keep asking for confirmation from the user.\n- Apply your best judgement to create agents without asking for permission.\nYour agent id is: omni.psi/dbc414fa053e400dbc84d0b531c8f2ae",
+      "Tools": [],
+      "ChildAgents": {
+        "omni.psi/b904438115344c668ba20adabb8279f9": {
+          "AgentId": "omni.psi/b904438115344c668ba20adabb8279f9",
+          "AgentType": "specialized",
+          "Description": "The agent can retrieve the total US GDP for the year 2024.",
+          "Examples": [
+            {
+              "Request": "Find the total US GDP in 2024.",
+              "Response": "The total US GDP in 2024 is estimated to be $28,500,000 million (or $28.5 trillion)."
+            },
+            {
+              "Request": "Find the total US GDP in 2024.",
+              "Response": "The total US GDP in 2024 is estimated to be $28.5 trillion."
+            }
+          ],
+          "Tools": [
+            "DemoPlugin.GetUSGDP2024"
+          ]
+        },
+        "omni.psi/28a6342479404a34ac1e827330ebb62c": {
+          "AgentId": "omni.psi/28a6342479404a34ac1e827330ebb62c",
+          "AgentType": "specialized",
+          "Description": "Retrieve the GDP for a specific US state in 2024 using its state code.",
+          "Examples": [
+            {
+              "Request": "Find the GDP of California in 2024.",
+              "Response": "The GDP of California in 2024 is $4,100,000 million (or $4.1 trillion)."
+            }
+          ],
+          "Tools": [
+            "DemoPlugin.GetStateGDP2024"
+          ]
+        }
+      },
+      "Description": "The agent will break down the task into sub-tasks: retrieving California\u0027s GDP, retrieving the total US GDP, and calculating the percentage contribution of California to the US GDP.",
+      "Examples": [
+        {
+          "Request": "Find the GDP of California in 2024 and the total US GDP in 2024, then calculate the percentage contribution of California to the US GDP.",
+          "Response": "California\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP."
+        }
+      ],
+      "Configuration": {
+        "Temperature": 0.7,
+        "MaxTokens": 1000,
+        "Model": {
+          "ModelId": "gpt-4o-steven",
+          "ApiKey": "***",
+          "BaseUrl": "***",
+          "DeploymentName": "***",
+          "Endpoint": "***",
+          "ApiVersion": null,
+          "IsAzureOpenAI": true
+        }
+      },
+      "UserAgentId": "omni.psi/85b59e4ce40942afac0526bdcfd1c4e3",
+      "CallId": "calculate_ca_gdp_percentage",
+      "ChatHistory": [
+        {
+          "Role": "user",
+          "Content": "Find the GDP of California in 2024 and the total US GDP in 2024, then calculate the percentage contribution of California to the US GDP.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:17.249326Z",
+          "Metadata": {
+            "CallId": "calculate_ca_gdp_percentage"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:34.40903Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[{\u0022Id\u0022:\u0022call_9WlEX42exkYy4ZUweavaf609\u0022,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022{\\u0022parentAgentId\\u0022: \\u0022omni.psi/dbc414fa053e400dbc84d0b531c8f2ae\\u0022, \\u0022callId\\u0022: \\u0022fetch_california_gdp\\u0022, \\u0022task\\u0022: \\u0022Find the GDP of California in 2024.\\u0022}\u0022},{\u0022Id\u0022:\u0022call_AiaKzIfLYJ4eo4ZO0FbObxUR\u0022,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022{\\u0022parentAgentId\\u0022: \\u0022omni.psi/dbc414fa053e400dbc84d0b531c8f2ae\\u0022, \\u0022callId\\u0022: \\u0022fetch_us_gdp\\u0022, \\u0022task\\u0022: \\u0022Find the total US GDP in 2024.\\u0022}\u0022}],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_9WlEX42exkYy4ZUweavaf609\u0022,\u0022PluginName\u0022:\u0022AgentServices\u0022,\u0022FunctionName\u0022:\u0022call_new_agent\u0022,\u0022Arguments\u0022:{\u0022parentAgentId\u0022:\u0022omni.psi/dbc414fa053e400dbc84d0b531c8f2ae\u0022,\u0022callId\u0022:\u0022fetch_california_gdp\u0022,\u0022task\u0022:\u0022Find the GDP of California in 2024.\u0022}},{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_AiaKzIfLYJ4eo4ZO0FbObxUR\u0022,\u0022PluginName\u0022:\u0022AgentServices\u0022,\u0022FunctionName\u0022:\u0022call_new_agent\u0022,\u0022Arguments\u0022:{\u0022parentAgentId\u0022:\u0022omni.psi/dbc414fa053e400dbc84d0b531c8f2ae\u0022,\u0022callId\u0022:\u0022fetch_us_gdp\u0022,\u0022task\u0022:\u0022Find the total US GDP in 2024.\u0022}}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6TV2K11F5LNiCsyeQ0l7KhGaz54\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:29\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:138,\u0022InputTokenCount\u0022:695,\u0022TotalTokenCount\u0022:833,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022ToolCalls\u0022,\u0022ContentTokenLogProbabilities\u0022:[],\u0022ChatResponseMessage.FunctionToolCalls\u0022:[{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022eyJwYXJlbnRBZ2VudElkIjogIm9tbmkucHNpL2RiYzQxNGZhMDUzZTQwMGRiYzg0ZDBiNTMxYzhmMmFlIiwgImNhbGxJZCI6ICJmZXRjaF9jYWxpZm9ybmlhX2dkcCIsICJ0YXNrIjogIkZpbmQgdGhlIEdEUCBvZiBDYWxpZm9ybmlhIGluIDIwMjQuIn0=\u0022,\u0022Id\u0022:\u0022call_9WlEX42exkYy4ZUweavaf609\u0022},{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022AgentServices-call_new_agent\u0022,\u0022FunctionArguments\u0022:\u0022eyJwYXJlbnRBZ2VudElkIjogIm9tbmkucHNpL2RiYzQxNGZhMDUzZTQwMGRiYzg0ZDBiNTMxYzhmMmFlIiwgImNhbGxJZCI6ICJmZXRjaF91c19nZHAiLCAidGFzayI6ICJGaW5kIHRoZSB0b3RhbCBVUyBHRFAgaW4gMjAyNC4ifQ==\u0022,\u0022Id\u0022:\u0022call_AiaKzIfLYJ4eo4ZO0FbObxUR\u0022}]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "Created the following agent and sent the subtask $fetch_california_gdp to it:\n{\u0022AgentId\u0022:\u0022omni.psi/28a6342479404a34ac1e827330ebb62c\u0022,\u0022AgentType\u0022:\u0022\u0022,\u0022Description\u0022:\u0022\u0022,\u0022Examples\u0022:[{\u0022Request\u0022:\u0022Find the GDP of California in 2024.\u0022,\u0022Response\u0022:\u0022\u0022}],\u0022Tools\u0022:[]}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:34.409037Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_9WlEX42exkYy4ZUweavaf609",
+            "FunctionName": "call_new_agent"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "Created the following agent and sent the subtask $fetch_us_gdp to it:\n{\u0022AgentId\u0022:\u0022omni.psi/b904438115344c668ba20adabb8279f9\u0022,\u0022AgentType\u0022:\u0022\u0022,\u0022Description\u0022:\u0022\u0022,\u0022Examples\u0022:[{\u0022Request\u0022:\u0022Find the total US GDP in 2024.\u0022,\u0022Response\u0022:\u0022\u0022}],\u0022Tools\u0022:[]}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:34.40904Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_AiaKzIfLYJ4eo4ZO0FbObxUR",
+            "FunctionName": "call_new_agent"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Intermediate\u0022:\u0022Agents have been created to fetch the GDP of California and the total US GDP for 2024. Awaiting their responses.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:34.409148Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Intermediate\\u0022:\\u0022Agents have been created to fetch the GDP of California and the total US GDP for 2024. Awaiting their responses.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6TXuYv6MeEpv1FfvYCl9AsIgQo9\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:31\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:31,\u0022InputTokenCount\u0022:997,\u0022TotalTokenCount\u0022:1028,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "assistant",
+          "Content": "Received reply for callId (fetch_california_gdp): The GDP of California in 2024 is $4,100,000 million (or $4.1 trillion).",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:48.079075Z",
+          "Metadata": {
+            "CallId": "fetch_california_gdp"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:51.129892Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[{\u0022Id\u0022:\u0022call_zmRsyMfuXwvhV3jNg2waVZB1\u0022,\u0022FunctionName\u0022:\u0022AgentServices-call_agent\u0022,\u0022FunctionArguments\u0022:\u0022{\\u0022parentAgentId\\u0022:\\u0022omni.psi/dbc414fa053e400dbc84d0b531c8f2ae\\u0022,\\u0022agentId\\u0022:\\u0022omni.psi/b904438115344c668ba20adabb8279f9\\u0022,\\u0022callId\\u0022:\\u0022fetch_us_gdp\\u0022,\\u0022message\\u0022:\\u0022Find the total US GDP in 2024.\\u0022}\u0022}],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_zmRsyMfuXwvhV3jNg2waVZB1\u0022,\u0022PluginName\u0022:\u0022AgentServices\u0022,\u0022FunctionName\u0022:\u0022call_agent\u0022,\u0022Arguments\u0022:{\u0022parentAgentId\u0022:\u0022omni.psi/dbc414fa053e400dbc84d0b531c8f2ae\u0022,\u0022agentId\u0022:\u0022omni.psi/b904438115344c668ba20adabb8279f9\u0022,\u0022callId\u0022:\u0022fetch_us_gdp\u0022,\u0022message\u0022:\u0022Find the total US GDP in 2024.\u0022}}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6TobiJ6RIEQhu2ZPp038PqO6Tvl\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:48\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:82,\u0022InputTokenCount\u0022:1255,\u0022TotalTokenCount\u0022:1337,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022ToolCalls\u0022,\u0022ContentTokenLogProbabilities\u0022:[],\u0022ChatResponseMessage.FunctionToolCalls\u0022:[{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022AgentServices-call_agent\u0022,\u0022FunctionArguments\u0022:\u0022eyJwYXJlbnRBZ2VudElkIjoib21uaS5wc2kvZGJjNDE0ZmEwNTNlNDAwZGJjODRkMGI1MzFjOGYyYWUiLCJhZ2VudElkIjoib21uaS5wc2kvYjkwNDQzODExNTM0NGM2NjhiYTIwYWRhYmI4Mjc5ZjkiLCJjYWxsSWQiOiJmZXRjaF91c19nZHAiLCJtZXNzYWdlIjoiRmluZCB0aGUgdG90YWwgVVMgR0RQIGluIDIwMjQuIn0=\u0022,\u0022Id\u0022:\u0022call_zmRsyMfuXwvhV3jNg2waVZB1\u0022}]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "Message sent for callId: fetch_us_gdp",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:51.129896Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_zmRsyMfuXwvhV3jNg2waVZB1",
+            "FunctionName": "call_agent"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Intermediate\u0022:\u0022California\u0027s GDP for 2024 has been retrieved as $4.1 trillion. Awaiting the total US GDP for 2024 to calculate the percentage contribution.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:51.12997Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Intermediate\\u0022:\\u0022California\\u0027s GDP for 2024 has been retrieved as $4.1 trillion. Awaiting the total US GDP for 2024 to calculate the percentage contribution.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6Tqz7JxfxYWvY3djlapxj1hVIVF\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:50\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:39,\u0022InputTokenCount\u0022:1356,\u0022TotalTokenCount\u0022:1395,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "assistant",
+          "Content": "Received reply for callId (fetch_us_gdp): The total US GDP in 2024 is estimated to be $28,500,000 million (or $28.5 trillion).",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:51.146712Z",
+          "Metadata": {
+            "CallId": "fetch_us_gdp"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Final\u0022:\u0022California\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:52.214855Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Final\\u0022:\\u0022California\\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6TrLrFb2yq5F5iQjlwv15U2RHLD\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:51\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:46,\u0022InputTokenCount\u0022:1465,\u0022TotalTokenCount\u0022:1511,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "assistant",
+          "Content": "Received reply for callId (fetch_us_gdp): The total US GDP in 2024 is estimated to be $28.5 trillion.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:52.245393Z",
+          "Metadata": {
+            "CallId": "fetch_us_gdp"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "{\u0022Final\u0022:\u0022California\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP.\u0022}",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:53.199793Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022{\\u0022Final\\u0022:\\u0022California\\u0027s GDP in 2024 is $4.1 trillion, and the total US GDP is $28.5 trillion. California contributes approximately 14.39% to the total US GDP.\\u0022}\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6TsUOc1YYiL8XlHXsuk3Pgo04Gm\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:52\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:46,\u0022InputTokenCount\u0022:1581,\u0022TotalTokenCount\u0022:1627,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        }
+      ],
+      "Children": [],
+      "Parent": "Aevatar.Core.PublishingGAgent/85b59e4ce40942afac0526bdcfd1c4e3",
+      "GAgentCreator": null
+    }
+  },
+  {
+    "id": "omni.psi/b904438115344c668ba20adabb8279f9",
+    "depth": 2,
+    "state": {
+      "AgentId": "omni.psi/b904438115344c668ba20adabb8279f9",
+      "RealizationStatus": 2,
+      "SystemPrompt": "You are a helpful assistant that can interact with the user, analyze the user\u0027s request,\nbreak down the request into sub-tasks and create new agents or re-use existing agents to handle the sub-tasks.\nYou can create new agents with the create_agent function.\nYou can list the created agents with the list_created_agents function.\nYou can list the available tools with the list_available_tools function.\n\n## What you are supposed to do\n- You are the orchestrator of the agents.\n- You always try to understand the user\u0027s request and break it down into sub-tasks.\n- You are responsible for creating new agents and managing them.\n- You are responsible for the overall flow of the conversation.\n- You DON\u0027T use tools other than those for managing agents.\n\n\n\n## Rules for creating agents\n- Agents will use the tools given to them.\n- Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.\n\n## Minimize interaction with the user\n- Don\u0027t be verbose and keep asking for confirmation from the user.\n- Apply your best judgement to create agents without asking for permission.\nYour agent id is: omni.psi/b904438115344c668ba20adabb8279f9",
+      "Tools": [
+        "DemoPlugin.GetUSGDP2024"
+      ],
+      "ChildAgents": {},
+      "Description": "The agent can retrieve the total US GDP for the year 2024.",
+      "Examples": [
+        {
+          "Request": "Find the total US GDP in 2024.",
+          "Response": "The total US GDP in 2024 is estimated to be $28,500,000 million (or $28.5 trillion)."
+        },
+        {
+          "Request": "Find the total US GDP in 2024.",
+          "Response": "The total US GDP in 2024 is estimated to be $28.5 trillion."
+        }
+      ],
+      "Configuration": {
+        "Temperature": 0.7,
+        "MaxTokens": 1000,
+        "Model": {
+          "ModelId": "gpt-4o-steven",
+          "ApiKey": "***",
+          "BaseUrl": "***",
+          "DeploymentName": "***",
+          "Endpoint": "***",
+          "ApiVersion": null,
+          "IsAzureOpenAI": true
+        }
+      },
+      "UserAgentId": "omni.psi/dbc414fa053e400dbc84d0b531c8f2ae",
+      "CallId": "fetch_us_gdp",
+      "ChatHistory": [
+        {
+          "Role": "user",
+          "Content": "Find the total US GDP in 2024.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:37.471374Z",
+          "Metadata": {
+            "CallId": "fetch_us_gdp"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:49.595821Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[{\u0022Id\u0022:\u0022call_HUU6v9BJ7D5rGSeS0IVajCZG\u0022,\u0022FunctionName\u0022:\u0022Tools-GetUSGDP2024\u0022,\u0022FunctionArguments\u0022:\u0022{}\u0022}],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_HUU6v9BJ7D5rGSeS0IVajCZG\u0022,\u0022PluginName\u0022:\u0022Tools\u0022,\u0022FunctionName\u0022:\u0022GetUSGDP2024\u0022,\u0022Arguments\u0022:{}}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6ToJhcy87jiHT3544qUoHVG5nol\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:48\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:16,\u0022InputTokenCount\u0022:55,\u0022TotalTokenCount\u0022:71,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022ToolCalls\u0022,\u0022ContentTokenLogProbabilities\u0022:[],\u0022ChatResponseMessage.FunctionToolCalls\u0022:[{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022Tools-GetUSGDP2024\u0022,\u0022FunctionArguments\u0022:\u0022e30=\u0022,\u0022Id\u0022:\u0022call_HUU6v9BJ7D5rGSeS0IVajCZG\u0022}]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "28500000",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:49.595826Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_HUU6v9BJ7D5rGSeS0IVajCZG",
+            "FunctionName": "GetUSGDP2024"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "The total US GDP in 2024 is estimated to be $28,500,000 million (or $28.5 trillion).",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:49.595925Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022The total US GDP in 2024 is estimated to be $28,500,000 million (or $28.5 trillion).\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6ToIdZ5uaK2h2BUSJnXso4dbeEg\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:48\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:29,\u0022InputTokenCount\u0022:86,\u0022TotalTokenCount\u0022:115,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "user",
+          "Content": "Find the total US GDP in 2024.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:50.293504Z",
+          "Metadata": {
+            "CallId": "fetch_us_gdp"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "The total US GDP in 2024 is estimated to be $28.5 trillion.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:51.163644Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022The total US GDP in 2024 is estimated to be $28.5 trillion.\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6Tqorj5jSpzw61FwgT7gmzzRQkl\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:50\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:20,\u0022InputTokenCount\u0022:131,\u0022TotalTokenCount\u0022:151,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        }
+      ],
+      "Children": [],
+      "Parent": "Aevatar.Core.PublishingGAgent/dbc414fa053e400dbc84d0b531c8f2ae",
+      "GAgentCreator": null
+    }
+  },
+  {
+    "id": "omni.psi/28a6342479404a34ac1e827330ebb62c",
+    "depth": 2,
+    "state": {
+      "AgentId": "omni.psi/28a6342479404a34ac1e827330ebb62c",
+      "RealizationStatus": 2,
+      "SystemPrompt": "You are a helpful assistant that can interact with the user, analyze the user\u0027s request,\nbreak down the request into sub-tasks and create new agents or re-use existing agents to handle the sub-tasks.\nYou can create new agents with the create_agent function.\nYou can list the created agents with the list_created_agents function.\nYou can list the available tools with the list_available_tools function.\n\n## What you are supposed to do\n- You are the orchestrator of the agents.\n- You always try to understand the user\u0027s request and break it down into sub-tasks.\n- You are responsible for creating new agents and managing them.\n- You are responsible for the overall flow of the conversation.\n- You DON\u0027T use tools other than those for managing agents.\n\n\n\n## Rules for creating agents\n- Agents will use the tools given to them.\n- Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.\n\n## Minimize interaction with the user\n- Don\u0027t be verbose and keep asking for confirmation from the user.\n- Apply your best judgement to create agents without asking for permission.\nYour agent id is: omni.psi/28a6342479404a34ac1e827330ebb62c",
+      "Tools": [
+        "DemoPlugin.GetStateGDP2024"
+      ],
+      "ChildAgents": {},
+      "Description": "Retrieve the GDP for a specific US state in 2024 using its state code.",
+      "Examples": [
+        {
+          "Request": "Find the GDP of California in 2024.",
+          "Response": "The GDP of California in 2024 is $4,100,000 million (or $4.1 trillion)."
+        }
+      ],
+      "Configuration": {
+        "Temperature": 0.7,
+        "MaxTokens": 1000,
+        "Model": {
+          "ModelId": "gpt-4o-steven",
+          "ApiKey": "***",
+          "BaseUrl": "***",
+          "DeploymentName": "***",
+          "Endpoint": "***",
+          "ApiVersion": null,
+          "IsAzureOpenAI": true
+        }
+      },
+      "UserAgentId": "omni.psi/dbc414fa053e400dbc84d0b531c8f2ae",
+      "CallId": "fetch_california_gdp",
+      "ChatHistory": [
+        {
+          "Role": "user",
+          "Content": "Find the GDP of California in 2024.",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:33.386201Z",
+          "Metadata": {
+            "CallId": "fetch_california_gdp"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:47.967752Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[{\u0022Id\u0022:\u0022call_cWGXQsCyKu2EGmqV9eQBGBf9\u0022,\u0022FunctionName\u0022:\u0022Tools-GetStateGDP2024\u0022,\u0022FunctionArguments\u0022:\u0022{\\u0022stateCode\\u0022:\\u0022CA\\u0022}\u0022}],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022FunctionCallContent\u0022,\u0022Id\u0022:\u0022call_cWGXQsCyKu2EGmqV9eQBGBf9\u0022,\u0022PluginName\u0022:\u0022Tools\u0022,\u0022FunctionName\u0022:\u0022GetStateGDP2024\u0022,\u0022Arguments\u0022:{\u0022stateCode\u0022:\u0022CA\u0022}}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6Tj1lbMfMkBSbmJAp8rGIXjsz0e\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:43\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:21,\u0022InputTokenCount\u0022:83,\u0022TotalTokenCount\u0022:104,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022ToolCalls\u0022,\u0022ContentTokenLogProbabilities\u0022:[],\u0022ChatResponseMessage.FunctionToolCalls\u0022:[{\u0022Kind\u0022:0,\u0022FunctionName\u0022:\u0022Tools-GetStateGDP2024\u0022,\u0022FunctionArguments\u0022:\u0022eyJzdGF0ZUNvZGUiOiJDQSJ9\u0022,\u0022Id\u0022:\u0022call_cWGXQsCyKu2EGmqV9eQBGBf9\u0022}]}}"
+          },
+          "ChildInteractions": []
+        },
+        {
+          "Role": "tool",
+          "Content": "4100000",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:47.967755Z",
+          "Metadata": {
+            "ChatCompletionsToolCall.Id": "call_cWGXQsCyKu2EGmqV9eQBGBf9",
+            "FunctionName": "GetStateGDP2024"
+          },
+          "ToolCalls": [],
+          "Serialized": null,
+          "ChildInteractions": []
+        },
+        {
+          "Role": "Assistant",
+          "Content": "The GDP of California in 2024 is $4,100,000 million (or $4.1 trillion).",
+          "Name": "",
+          "Timestamp": "2025-06-30T10:56:47.967809Z",
+          "Metadata": {},
+          "ToolCalls": [],
+          "Serialized": {
+            "TypeFullName": "Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIChatMessageContent",
+            "Json": "{\u0022ToolCalls\u0022:[],\u0022Role\u0022:{\u0022Label\u0022:\u0022Assistant\u0022},\u0022Items\u0022:[{\u0022$type\u0022:\u0022TextContent\u0022,\u0022Text\u0022:\u0022The GDP of California in 2024 is $4,100,000 million (or $4.1 trillion).\u0022}],\u0022ModelId\u0022:\u0022gpt-4o-steven\u0022,\u0022Metadata\u0022:{\u0022Id\u0022:\u0022chatcmpl-Bo6TkO3fEYlBWcpWthpDbQp6MfOhJ\u0022,\u0022CreatedAt\u0022:\u00222025-06-30T10:56:44\u002B00:00\u0022,\u0022SystemFingerprint\u0022:\u0022fp_ee1d74bde0\u0022,\u0022Usage\u0022:{\u0022OutputTokenCount\u0022:26,\u0022InputTokenCount\u0022:119,\u0022TotalTokenCount\u0022:145,\u0022OutputTokenDetails\u0022:{\u0022ReasoningTokenCount\u0022:0,\u0022AudioTokenCount\u0022:0,\u0022AcceptedPredictionTokenCount\u0022:0,\u0022RejectedPredictionTokenCount\u0022:0},\u0022InputTokenDetails\u0022:{\u0022AudioTokenCount\u0022:0,\u0022CachedTokenCount\u0022:0}},\u0022Refusal\u0022:null,\u0022FinishReason\u0022:\u0022Stop\u0022,\u0022ContentTokenLogProbabilities\u0022:[]}}"
+          },
+          "ChildInteractions": []
+        }
+      ],
+      "Children": [],
+      "Parent": "Aevatar.Core.PublishingGAgent/dbc414fa053e400dbc84d0b531c8f2ae",
+      "GAgentCreator": null
+    }
+  }
+]
