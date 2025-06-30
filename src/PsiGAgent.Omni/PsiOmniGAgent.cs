@@ -6,7 +6,6 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using PsiAgnet.Omni;
-using PsiGAgent.Orchestrator;
 using PsiOrleans.Common;
 using PsiOrleans.Common.Interfaces;
 using PsiOrleans.Common.Models;

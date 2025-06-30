@@ -5,11 +5,10 @@ using System.Text.Json;
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
-using PsiGAgent.Omni;
 using PsiOrleans.Common;
 using PsiOrleans.Common.Models;
 
-namespace PsiGAgent.Orchestrator;
+namespace PsiGAgent.Omni;
 
 public interface IOrchestratorService
 {
@@ -66,7 +65,7 @@ public class OrchestratorService : IOrchestratorService
     /// Create a new specialized agent with custom prompt and tools
     /// </summary>
     [KernelFunction("create_and_call_agent")]
-    [Description("Creates a new agent with an initial task.")]
+    [Description("Creates a new agent with an initial task. The result will be notified to the given parent agent. Don't use call_agent to send the task again.")]
     public async Task<string> CreateAgentAsync(
         [Description("The ID of the parent agent.")]
         string parentAgentId,
@@ -128,7 +127,7 @@ public class OrchestratorService : IOrchestratorService
 
             children.Add(descriptor);
 
-            return $"Created the following agent and sent the subtask to it:\n{JsonSerializer.Serialize(descriptor)}";
+            return $"Created the following agent and sent the subtask ${callId} to it:\n{JsonSerializer.Serialize(descriptor)}";
         }
         catch (Exception ex)
         {

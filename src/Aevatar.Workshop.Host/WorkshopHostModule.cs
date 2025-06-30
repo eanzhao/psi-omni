@@ -3,6 +3,7 @@ using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.SemanticKernel.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using PsiAgnet.Omni;
+using PsiGAgent.Omni;
 using PsiGAgent.Orchestrator;
 using PsiOrleans.Common.Interfaces;
 using PsiOrleans.Plugins;
