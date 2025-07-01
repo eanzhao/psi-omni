@@ -1,6 +1,6 @@
 using Orleans;
 
-namespace PsiOrleans.Common.Models;
+namespace PsiGAgent.Common.Models;
 
 /// <summary>
 /// Configuration for a configurable agent, defining its behavior and model settings

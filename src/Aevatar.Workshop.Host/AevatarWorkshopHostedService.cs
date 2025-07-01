@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Hosting;
 using Volo.Abp;
-using PsiOrleans.Plugins;
-using PsiOrleans.Common.Interfaces;
 using Microsoft.SemanticKernel; // For KernelFunction, KernelPluginFactory, KernelFunctionFactory
 using Microsoft.SemanticKernel.Data;
 using Microsoft.SemanticKernel.Plugins.Web.Google;
 using Microsoft.SemanticKernel.Plugins.Web.Tavily;
+using PsiGAgent.Common.Interfaces;
+using PsiGAgent.Plugins;
 
 namespace Aevatar.Workshop.Host;
 

@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
-using PsiOrleans.Common.Interfaces;
+using PsiGAgent.Common.Interfaces;
 
 namespace PsiAgnet.Omni;
 

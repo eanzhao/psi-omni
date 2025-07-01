@@ -5,8 +5,8 @@ using System.Text.Json;
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
-using PsiOrleans.Common;
-using PsiOrleans.Common.Models;
+using PsiGAgent.Common;
+using PsiGAgent.Common.Models;
 
 namespace PsiGAgent.Omni;
 

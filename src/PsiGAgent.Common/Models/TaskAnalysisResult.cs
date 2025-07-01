@@ -1,6 +1,6 @@
 using Orleans;
 
-namespace PsiOrleans.Common.Models;
+namespace PsiGAgent.Common.Models;
 
 /// <summary>
 /// Represents the recommended approach for handling a task.

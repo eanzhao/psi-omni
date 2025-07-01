@@ -1,7 +1,7 @@
 using Microsoft.SemanticKernel;
-using PsiOrleans.Common.Models;
+using PsiGAgent.Common.Models;
 
-namespace PsiOrleans.Common.Interfaces;
+namespace PsiGAgent.Common.Interfaces;
 
 public interface IKernelFactory
 {

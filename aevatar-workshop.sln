@@ -8,15 +8,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.Workshop.Client", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.Workshop.Host", "src\Aevatar.Workshop.Host\Aevatar.Workshop.Host.csproj", "{057FBEE7-E1EC-457C-A2B5-9C5FA17574F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PsiOrleans.Common", "src\PsiOrleans.Common\PsiOrleans.Common.csproj", "{C715528F-945A-407A-A5CA-998810920B78}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PsiGAgent.Common", "src\PsiGAgent.Common\PsiGAgent.Common.csproj", "{C715528F-945A-407A-A5CA-998810920B78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PsiOrleans.Plugins", "src\PsiOrleans.Plugins\PsiOrleans.Plugins.csproj", "{3736B3EC-739D-4E28-BE0E-9D1FAC31AD76}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PsiGAgent.Plugins", "src\PsiGAgent.Plugins\PsiGAgent.Plugins.csproj", "{3736B3EC-739D-4E28-BE0E-9D1FAC31AD76}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PsiOrleans.Common.Tests", "src\PsiOrleans.Common.Tests\PsiOrleans.Common.Tests.csproj", "{A54FBFD3-873D-4831-8378-688C298095C7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PsiGAgent.Common.Tests", "src\PsiGAgent.Common.Tests\PsiGAgent.Common.Tests.csproj", "{A54FBFD3-873D-4831-8378-688C298095C7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PsiGAgent.Omni", "src\PsiGAgent.Omni\PsiGAgent.Omni.csproj", "{DFA4D15C-7370-4116-B9DC-8FAF2ED19622}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Psi.CliOmni", "src\Psi.CliOmni\Psi.CliOmni.csproj", "{37906FBB-CEE7-4AB0-A645-1353B3EF473D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Psi", "src\Psi\Psi.csproj", "{37906FBB-CEE7-4AB0-A645-1353B3EF473D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

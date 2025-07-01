@@ -1,14 +1,9 @@
-using Microsoft.SemanticKernel;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using PsiOrleans.Common.Interfaces;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
-using OpenAI.Assistants;
-using Microsoft.SemanticKernel.Agents;
+using Microsoft.SemanticKernel;
+using PsiGAgent.Common.Interfaces;
 
-namespace PsiOrleans.Plugins;
+namespace PsiGAgent.Plugins;
 
 public class KernelFunctionRegistry : IKernelFunctionRegistry
 {

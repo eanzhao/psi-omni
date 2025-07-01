@@ -1,8 +1,6 @@
-using System;
-using System.Collections.Generic;
 using Orleans;
 
-namespace PsiOrleans.Common.Models;
+namespace PsiGAgent.Common.Models;
 
 /// <summary>
 /// Orchestration decision types for LLM-based orchestration logic

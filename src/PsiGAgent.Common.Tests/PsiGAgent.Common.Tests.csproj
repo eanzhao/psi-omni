@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <RootNamespace>PsiGAgent.Common.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PsiOrleans.Common\PsiOrleans.Common.csproj" />
+    <ProjectReference Include="..\PsiGAgent.Common\PsiGAgent.Common.csproj" />
   </ItemGroup>
 
 </Project>

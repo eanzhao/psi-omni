@@ -1,8 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.SemanticKernel;
-using PsiOrleans.Common.Interfaces;
-using PsiOrleans.Common.Models;
-using PsiOrleans.Plugins;
+using PsiGAgent.Common.Interfaces;
+using PsiGAgent.Common.Models;
 
 namespace Aevatar.Workshop.Host;
 

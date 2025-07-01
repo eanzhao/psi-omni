@@ -1,9 +1,7 @@
 using Aevatar.Core.Abstractions;
 using Orleans;
-using PsiOrleans.Common.Models;
-using PsiOrleans.Common.Interfaces;
 
-namespace PsiOrleans.Common.Models;
+namespace PsiGAgent.Common.Models;
 
 [Serializable]
 [GenerateSerializer]

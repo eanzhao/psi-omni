@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.SemanticKernel;
-using PsiOrleans.Common.Interfaces;
+using PsiGAgent.Common.Interfaces;
 
 namespace PsiGAgent.Omni;
 

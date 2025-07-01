@@ -36,8 +36,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\PsiGAgent.Common\PsiGAgent.Common.csproj" />
         <ProjectReference Include="..\PsiGAgent.Omni\PsiGAgent.Omni.csproj" />
-        <ProjectReference Include="..\PsiOrleans.Plugins\PsiOrleans.Plugins.csproj"/>
+        <ProjectReference Include="..\PsiGAgent.Plugins\PsiGAgent.Plugins.csproj" />
         
     </ItemGroup>
 

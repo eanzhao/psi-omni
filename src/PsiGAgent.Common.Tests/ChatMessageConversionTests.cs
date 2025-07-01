@@ -1,11 +1,11 @@
-using PsiOrleans.Common.Models;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel;
-using ChatMessage = PsiOrleans.Common.Models.ChatMessage;
-using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 using System.Text.Json;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using PsiGAgent.Common.Models;
+using ChatMessage = PsiGAgent.Common.Models.ChatMessage;
+using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 
-namespace PsiOrleans.Common.Tests
+namespace PsiGAgent.Common.Tests
 {
     public class ChatMessageConversionTests
     {

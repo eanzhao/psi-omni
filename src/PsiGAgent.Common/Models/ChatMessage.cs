@@ -1,4 +1,6 @@
-namespace PsiOrleans.Common.Models;
+using Orleans;
+
+namespace PsiGAgent.Common.Models;
 
 [Serializable]
 [GenerateSerializer]

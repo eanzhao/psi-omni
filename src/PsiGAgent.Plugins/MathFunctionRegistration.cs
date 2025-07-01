@@ -1,9 +1,7 @@
 using Microsoft.SemanticKernel;
-using PsiOrleans.Common.Interfaces;
-using System;
-using System.Linq;
+using PsiGAgent.Common.Interfaces;
 
-namespace PsiOrleans.Plugins;
+namespace PsiGAgent.Plugins;
 
 public static class MathFunctionRegistration
 {

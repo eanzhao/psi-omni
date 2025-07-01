@@ -1,7 +1,8 @@
 using Aevatar.Core.Abstractions;
-using PsiOrleans.Common.Models;
+using Orleans;
+using PsiGAgent.Common.Models;
 
-namespace PsiOrleans.Common;
+namespace PsiGAgent.Common;
 
 [GenerateSerializer]
 public class AgentConfigEvent : EventBase

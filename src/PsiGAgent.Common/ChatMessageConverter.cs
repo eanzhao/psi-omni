@@ -1,17 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Text.Json;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using PsiOrleans.Common.Models;
+using PsiGAgent.Common.Models;
 
-namespace PsiOrleans.Common;
+namespace PsiGAgent.Common;
 
 /// <summary>
-/// Converts between PsiOrleans.Common.Models.ChatMessage and Semantic Kernel message types
+/// Converts between PsiGAgent.Common.Models.ChatMessage and Semantic Kernel message types
 /// </summary>
 public static class ChatMessageConverter
 {

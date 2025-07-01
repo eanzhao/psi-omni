@@ -1,4 +1,4 @@
-namespace PsiOrleans.Common.Models;
+namespace PsiGAgent.Common.Models;
 
 /// <summary>
 /// Agent roles based on task analysis and orchestration requirements

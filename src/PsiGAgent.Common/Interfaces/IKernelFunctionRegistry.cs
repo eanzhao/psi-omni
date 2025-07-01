@@ -1,7 +1,6 @@
 using Microsoft.SemanticKernel;
-using System.Collections.Generic;
 
-namespace PsiOrleans.Common.Interfaces;
+namespace PsiGAgent.Common.Interfaces;
 
 public interface IKernelFunctionRegistry
 {
