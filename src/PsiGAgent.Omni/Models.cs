@@ -15,7 +15,16 @@ public class ToolDefinition
 {
     [Id(0)] public string Name { get; set; } = string.Empty;
     [Id(1)] public string Description { get; set; } = string.Empty;
-    [Id(2)] public List<string> Parameters { get; set; } = new();
+    [Id(2)] public List<ToolParameter> Parameters { get; set; } = new();
+}
+
+[GenerateSerializer]
+public class ToolParameter
+{
+    [Id(0)] public string Name { get; set; } = string.Empty;
+    [Id(1)] public string Description { get; set; } = string.Empty;
+    [Id(2)] public bool IsRequired { get; set; } = true;
+    [Id(3)] public string Schema { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]

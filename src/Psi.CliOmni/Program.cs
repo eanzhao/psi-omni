@@ -57,20 +57,26 @@ class Program
         clearCacheCommand.SetHandler(async () => { await ClearCacheAsync(); });
 
         var continueMessageArg = new Argument<string>("message", "User message to continue the conversation");
-        var continueCommand = new Command("continue", "Send a ContinueConversationEvent to the last cached agent")
+        var continueIdArg = new Argument<string?>("id", () => null, "Agent ID (optional, defaults to last cached)");
+        var continueCommand = new Command("continue", "Send a ContinueConversationEvent to the specified or last cached agent")
         {
-            continueMessageArg
+            continueMessageArg,
+            continueIdArg
         };
-        continueCommand.SetHandler(async (string message) =>
+        continueCommand.SetHandler(async (string message, string? id) =>
         {
-            var ids = await ReadCacheAsync();
-            if (ids.Count == 0)
+            if (string.IsNullOrEmpty(id))
             {
-                Console.WriteLine("No cached agents found. Please create an agent first.");
-                return;
+                var ids = await ReadCacheAsync();
+                if (ids.Count == 0)
+                {
+                    Console.WriteLine("No cached agents found. Please create an agent first or specify an ID.");
+                    return;
+                }
+
+                id = ids[^1]; // last cached id
             }
 
-            var id = ids[^1]; // last cached id
             var (gAgentFactory, _) = await InitAsync();
             var agent = await gAgentFactory.GetGAgentAsync(GrainId.Parse(id));
             var publisher = await gAgentFactory.GetGAgentAsync<IPublishingGAgent>(Guid.NewGuid());
@@ -83,7 +89,7 @@ class Program
             };
             await publisher.PublishEventAsync(evt, agent);
             Console.WriteLine($"Sent ContinueConversationEvent to agent {id} with message: {message}");
-        }, continueMessageArg);
+        }, continueMessageArg, continueIdArg);
 
         rootCommand.AddCommand(createCommand);
         rootCommand.AddCommand(listCommand);

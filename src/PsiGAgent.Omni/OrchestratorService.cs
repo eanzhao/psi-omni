@@ -107,8 +107,6 @@ public class OrchestratorService : IOrchestratorService
             var descriptor = new AgentDescriptor
             {
                 AgentId = agentId.ToString(),
-                AgentType = string.Empty,
-                Description = string.Empty,
                 Examples = new List<AgentExample>()
                 {
                     new AgentExample
@@ -116,8 +114,7 @@ public class OrchestratorService : IOrchestratorService
                         Request = task,
                         Response = string.Empty
                     }
-                },
-                Tools = new List<string>()
+                }
             };
 
             if (!ChildrenRegistry.TryGetValue(parentAgentId, out var children))

@@ -28,7 +28,7 @@ public class PsiOmniGAgentState : StateBase
     [Id(0)] public string AgentId { get; set; } = string.Empty;
     [Id(1)] public RealizationStatus RealizationStatus { get; set; } = RealizationStatus.Unrealized;
     [Id(2)] public string SystemPrompt { get; set; } = string.Empty;
-    [Id(3)] public List<string> Tools { get; set; } = new();
+    [Id(3)] public List<ToolDefinition> Tools { get; set; } = new();
     [Id(4)] public Dictionary<string, AgentDescriptor> ChildAgents { get; set; } = new();
     [Id(5)] public string Description { get; set; } = string.Empty;
     [Id(6)] public List<AgentExample> Examples { get; set; } = new();
@@ -85,7 +85,7 @@ public class RealizationEvent : PsiOmniGAgentStateLogEvent
 {
     [Id(0)] public RealizationStatus RealizationStatus { get; set; } = RealizationStatus.Unrealized;
     [Id(1)] public string Description { get; set; } = string.Empty;
-    [Id(2)] public List<string> Tools { get; set; } = new();
+    [Id(2)] public List<ToolDefinition> Tools { get; set; } = new();
 }
 
 [GenerateSerializer]
@@ -119,23 +119,20 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                                          - No other text or explanation.
                                          """,
         [RealizationStatus.Orchestrator] = """
-                                           You are a helpful assistant that can interact with the user, analyze the user's request,
+                                           You are a smart orchestrator agent that can interact with the user, analyze the user's request,
                                            break down the request into sub-tasks and delegate the sub-tasks to child agents.
 
-                                           ## What you are supposed to do
-                                           - You are the orchestrator of the agents.
-                                           - You always try to understand the user's request and break it down into sub-tasks.
-                                           - You perform the task by delegating sub-tasks to child agents.
-                                           - If an existing child agent can handle a sub-task, delegate the sub-task to it. Otherwise, you can delegate the sub-task to a new agent.
-                                           - You are responsible for the overall flow of the conversation.
-                                           - You DON'T use tools other than those for interacting with child agents.
-                                           - You should always try to break down the task. You should not sent the original task to another agent unless it's a simple task that is suitable for an existing agent.
+                                           ## General Rules
+                                           - Always analyze the user's request and break it down into sub-tasks.
+                                           - Perform the task by delegating sub-tasks to child agents.
+                                           - Make sure to consider existing child agents before deciding to delegate a sub-task.
+                                           - Decide suitable child agents based on their description and tools used.
+                                           - Only use tools for interacting with child agents and no other tools.
+                                           - Never send the original task to another agent unless it's a simple task that is suitable for an existing agent.
 
-                                           ## Rules for creating agents
-                                           - Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.
-                                           - Each of your child agents should be generic for one type of tasks. They are supposed to be re-usable.
-                                           - When you send the first task to a new agent, the agent is created upon receiving the task, you don't need to send the task in another tool call.
-                                           - Avoid creating unnecessary new agent. IMPORTANT: Always try to find an existing agent that is suitable for a task first.
+                                           ## Guidelines for Task Breakdown and Delegation
+                                           - Apply separation of concerns. An agent should be responsible for one type of task.
+                                           - When you send the first task to a new agent, the agent is created upon receiving the task, you don't need to send the task in another tool call. IMPORTANT: Always try to find an existing agent that is suitable for a task first.
                                            - New agent is required if and only if a new category of subtasks is discovered.
 
                                            ## Minimize interaction with the user
@@ -150,12 +147,18 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                                            - If the task is not finished, you should output "Intermediate" with the intermediate result.
                                            - If the task is finished, you should output "Final" with the final result.
 
-                                           ## Example Output
+                                           ## Example Outputs
                                            {
                                              "Intermediate": "There are 22 people in the room and we have 2 cakes. We need to divide the cakes evenly.",
                                              "Final": "We have 11 people and 1 cake each."
                                            }
-                                           
+                                           {
+                                             "Intermediate": "I received the GDP of the United States for 2024 which is $x trillion. Awaiting the GDP of New York state for 2024 before I can calculate the percentage contribution of New York state to the US GDP."
+                                           }
+                                           {
+                                             "Final": "The GDP of the United States for 2024 is $x trillion, and the GDP of New York state for 2024 is $y trillion. The percentage contribution of New York state to the US GDP is approximately z%."
+                                           }
+
                                            """,
         [RealizationStatus.Specialized] = "" // TODO:
     };
@@ -344,7 +347,7 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                 break;
             case RealizationStatus.Orchestrator:
                 kernel = GetKernel_Orchestrator();
-                systemPrompt += $"\n\n## Existing Child Agents:\n{GetAllChildAgents()}";
+                systemPrompt += $"\n\n## Existing Child Agents (Try your best to re-use them):\n{GetAllChildAgents()}";
                 systemPrompt += $"\n\nYour agent Id is: <agentId>{this.GetGrainId()}</agentId>";
                 (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
                 OnChatDoneAsync_Orchestrator(chatHistory, preHistoryLength);
@@ -540,11 +543,21 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
             }
             else if (realizationResult?.OperationMode == "SPECIALIZED")
             {
+                var tools = new List<ToolDefinition>();
+                foreach (var toolName in realizationResult.Tools)
+                {
+                    var kernelFunction = _kernelFactory.FunctionRegistry?.GetToolByQualifiedName(toolName);
+                    if (kernelFunction != null)
+                    {
+                        tools.Add(kernelFunction.ToToolDefinition());
+                    }
+                }
+
                 RaiseEvent(new RealizationEvent()
                 {
                     RealizationStatus = RealizationStatus.Specialized,
                     Description = realizationResult?.Description ?? string.Empty,
-                    Tools = realizationResult?.Tools ?? new()
+                    Tools = tools
                 });
             }
         }
@@ -653,7 +666,7 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
     {
         var kernel = _kernelFactory.CreateKernel(
             State.Configuration!,
-            State.Tools
+            State.Tools.Select(x => x.Name).ToList()
         ); // Orchestrator doesn't have specialized tools.
         if (kernel == null)
             throw new InvalidOperationException("Kernel is not configured for tool execution.");
@@ -750,7 +763,7 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                     state.AgentId = grainId;
                     state.UserAgentId = payload.Event.ParentAgentId;
                     state.Configuration = config;
-                    state.Tools = payload.Event.Tools;
+                    // state.Tools = payload.Event.Tools; // Not needed here. No tools should be configured here.
                     state.SystemPrompt = SYSTEM_PROMPT + $"\nYour agent id is: {grainId}";
                 }
 
@@ -859,6 +872,7 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                     }
                     catch (Exception ex)
                     {
+                        finalResult = lastMessage;
                         Logger.LogError(ex, "Failed to deserialize OrchestratorMessage: {Message}", lastMessage);
                     }
                 }

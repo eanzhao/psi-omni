@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.SemanticKernel;
 using PsiOrleans.Common.Interfaces;
 
 namespace PsiGAgent.Omni;
@@ -9,28 +10,25 @@ public static class Extensions
     {
         return (from toolName in kernelFunctionRegistry.GetAllAvailableToolNames()
             let kernelFunction = kernelFunctionRegistry.GetToolByQualifiedName(toolName)!
-            select JsonSerializer.SerializeToDocument(new
-            {
-                Name = toolName,
-                Description = kernelFunction.Description,
-                Parameters = kernelFunction.Metadata.Parameters.Select(p => new
-                {
-                    Name = p.Name,
-                    Description = p.Description,
-                    IsRequired = p.IsRequired,
-                    Schema = p.Schema.RootElement.Clone()
-                }).ToList()
-            }).RootElement.Clone()).ToList();
+            select JsonSerializer.SerializeToDocument(kernelFunction.ToToolDefinition()).RootElement.Clone()).ToList();
     }
 
-    public static JsonElement ToJsonElement(this ToolDefinition toolDefinition)
+    public static ToolDefinition ToToolDefinition(this KernelFunction kernelFunction)
     {
-        var tempObject = new
+        var toolName = kernelFunction.PluginName.IsNullOrEmpty()
+            ? kernelFunction.Name
+            : $"{kernelFunction.PluginName}.{kernelFunction.Name}";
+        return new ToolDefinition
         {
-            toolDefinition.Name,
-            toolDefinition.Description,
-            Parameters = toolDefinition.Parameters.Select(p => JsonDocument.Parse(p).RootElement.Clone()).ToList()
+            Name = toolName,
+            Description = kernelFunction.Description,
+            Parameters = kernelFunction.Metadata.Parameters.Select(p => new ToolParameter
+            {
+                Name = p.Name,
+                Description = p.Description,
+                IsRequired = p.IsRequired,
+                Schema = p.Schema?.RootElement.Clone().ToString() ?? string.Empty
+            }).ToList()
         };
-        return JsonSerializer.SerializeToDocument(tempObject).RootElement.Clone();
     }
 }

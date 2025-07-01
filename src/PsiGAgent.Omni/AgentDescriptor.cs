@@ -43,7 +43,7 @@ public class AgentDescriptor : IEquatable<AgentDescriptor>
     [Id(1)] public string AgentType { get; set; } = string.Empty; // Orchestrator, Specialized
     [Id(2)] public string Description { get; set; } = string.Empty;
     [Id(3)] public List<AgentExample> Examples { get; set; } = new();
-    [Id(4)] public List<string> Tools { get; set; } = new();
+    [Id(4)] public List<ToolDefinition> Tools { get; set; } = new();
 
     public bool Equals(AgentDescriptor? other)
     {
