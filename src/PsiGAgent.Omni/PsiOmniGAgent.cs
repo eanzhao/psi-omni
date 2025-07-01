@@ -88,6 +88,12 @@ public class RealizationEvent : PsiOmniGAgentStateLogEvent
     [Id(2)] public List<string> Tools { get; set; } = new();
 }
 
+[GenerateSerializer]
+public class UpdateSelfDescription : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public string Description { get; set; } = string.Empty;
+}
+
 [GAgent("psi", "omni")]
 public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent>
 {
@@ -119,17 +125,18 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                                            ## What you are supposed to do
                                            - You are the orchestrator of the agents.
                                            - You always try to understand the user's request and break it down into sub-tasks.
-                                           - You are responsible for creating new agents and managing them.
+                                           - You perform the task by delegating sub-tasks to child agents.
+                                           - If an existing child agent can handle a sub-task, delegate the sub-task to it. Otherwise, you can delegate the sub-task to a new agent.
                                            - You are responsible for the overall flow of the conversation.
-                                           - You DON'T use tools other than those for managing agents.
+                                           - You DON'T use tools other than those for interacting with child agents.
                                            - You should always try to break down the task. You should not sent the original task to another agent unless it's a simple task that is suitable for an existing agent.
 
                                            ## Rules for creating agents
-                                           - Agents will use the tools given to them.
                                            - Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.
                                            - Each of your child agents should be generic for one type of tasks. They are supposed to be re-usable.
-                                           - When you create the agent, the first task will be sent, so you don't need to send the task in another tool call.
-                                           - Find existing agent that may be suitable for a task so that you don't need to create a new agent.
+                                           - When you send the first task to a new agent, the agent is created upon receiving the task, you don't need to send the task in another tool call.
+                                           - Avoid creating unnecessary new agent. IMPORTANT: Always try to find an existing agent that is suitable for a task first.
+                                           - New agent is required if and only if a new category of subtasks is discovered.
 
                                            ## Minimize interaction with the user
                                            - Don't be verbose and keep asking for confirmation from the user.
@@ -142,9 +149,27 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                                            - Either "Intermediate" or "Final" must be present, not both.
                                            - If the task is not finished, you should output "Intermediate" with the intermediate result.
                                            - If the task is finished, you should output "Final" with the final result.
+
+                                           ## Example Output
+                                           {
+                                             "Intermediate": "There are 22 people in the room and we have 2 cakes. We need to divide the cakes evenly.",
+                                             "Final": "We have 11 people and 1 cake each."
+                                           }
+                                           
                                            """,
         [RealizationStatus.Specialized] = "" // TODO:
     };
+
+    private string INTROSPECTOR_SYSTEM_PROMPT = """
+                                                You are an agent manager that understands the capabilities of the agents.
+
+                                                ## Task
+                                                - You are trying to understand the capabilities of an agent that works as an orchestrator and delegates its agent.
+                                                - Derive the capabilities of the agent from the capabilities of the child agents.
+                                                - Prepare a description of the agent's capabilities.
+                                                - Understand the category of tasks the agent can handle.
+                                                - Avoid putting specific tasks in the description.
+                                                """;
 
     string SYSTEM_PROMPT = """
                            You are a helpful assistant that can interact with the user, analyze the user's request,
@@ -261,6 +286,13 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
             return;
         }
 
+        if (_receivedMessageIds.Contains(@event.UniqueId))
+        {
+            return;
+        }
+
+        _receivedMessageIds.Add(@event.UniqueId);
+
         RaiseEvent(new UpdateChildEvent()
         {
             LastChildDescriptor = @event.SelfReport
@@ -341,6 +373,58 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
 
         return true;
     }
+
+    #region Introspector
+
+    private Kernel GetKernel_Plain()
+    {
+        var kernel = _kernelFactory.CreateKernel(
+            State.Configuration!
+        ); // Orchestrator doesn't have specialized tools.
+        if (kernel == null)
+            throw new InvalidOperationException("Kernel is not configured for tool execution.");
+
+        return kernel;
+    }
+
+    private async Task RunIntrospectionAsync()
+    {
+        var kernel = GetKernel_Plain();
+        var chatHistory = new ChatHistory();
+        chatHistory.AddSystemMessage(INTROSPECTOR_SYSTEM_PROMPT);
+        chatHistory.AddUserMessage(
+            $"Prepare a description for the agent with the following child agents:\n{GetChildrenDescriptions()}");
+        // 1. 获取 chat completion 服务
+        var chatService = kernel.GetRequiredService<IChatCompletionService>();
+        // 2. 构造 PromptExecutionSettings
+        var maxTokens = 4000; // 默认最大 token
+        var temperature = 0.1; // 默认温度
+        // 只用 OpenAI 版本（无 config.Model 判断）
+        var executionSettings = new OpenAIPromptExecutionSettings
+        {
+            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+            MaxTokens = maxTokens,
+            Temperature = temperature
+        };
+        var result = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel);
+        chatHistory.Add(result);
+        if (result.Content != null)
+            RaiseEvent(new UpdateSelfDescription
+            {
+                Description = result.Content
+            });
+    }
+
+    private string GetChildrenDescriptions()
+    {
+        var serializer = new SerializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .Build();
+
+        return serializer.Serialize(State.ChildAgents.Values.ToList());
+    }
+
+    #endregion Introspector
 
     #region Analyzer
 
@@ -718,17 +802,38 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
             case NewAgentsCreatedEvent payload:
                 foreach (var newAgent in payload.NewAgents)
                 {
-                    state.ChildAgents.Add(newAgent.AgentId, newAgent);
+                    state.ChildAgents.TryAdd(newAgent.AgentId, newAgent);
                 }
 
                 break;
             case UpdateChildEvent payload:
-                state.ChildAgents[payload.LastChildDescriptor.AgentId] = payload.LastChildDescriptor;
-                DoAsync(() =>
+                AgentDescriptor? oldObj;
+                // Child may proceed first and we receive this event before we process our own NewAgentsCreatedEvent event
+                if (!state.ChildAgents.TryGetValue(payload.LastChildDescriptor.AgentId, out oldObj))
                 {
+                    oldObj = new AgentDescriptor()
+                    {
+                        AgentId = payload.LastChildDescriptor.AgentId
+                    };
+                    state.ChildAgents[payload.LastChildDescriptor.AgentId] = oldObj;
+                }
+
+                var oldObjClone = oldObj.DeepClone();
+                var newObjClone = payload.LastChildDescriptor.DeepClone();
+                oldObjClone.Examples = new List<AgentExample>();
+                newObjClone.Examples = new List<AgentExample>();
+                var refreshDescription = !oldObjClone.Equals(newObjClone);
+
+                state.ChildAgents[payload.LastChildDescriptor.AgentId] = payload.LastChildDescriptor;
+                DoAsync(async () =>
+                {
+                    if (refreshDescription)
+                    {
+                        await RunIntrospectionAsync();
+                    }
+
                     _orchestratorService.UpdateChildAgents(this.GetGrainId().ToString(),
                         State.ChildAgents.Values.ToList());
-                    return Task.CompletedTask;
                 });
                 break;
             case GrowChatHistoryEvent payload:
@@ -769,6 +874,10 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                     });
                 }
 
+                break;
+            case UpdateSelfDescription payload:
+                state.Description = payload.Description;
+                DoAsync(DoSelfReportAsync);
                 break;
         }
     }

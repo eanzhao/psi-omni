@@ -89,4 +89,9 @@ public class ChatMessage
     {
         return new ChatMessage("assistant", content);
     }
+
+    public override string ToString()
+    {
+        return Content;
+    }
 }
