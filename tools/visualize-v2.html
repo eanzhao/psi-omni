@@ -49,8 +49,26 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
             display: none;
             font-size: 14px;
-            max-width: 400px;
+            max-width: 450px;
+            max-height: 600px;
+            overflow-y: auto;
             z-index: 1000;
+            scrollbar-width: thin;
+            scrollbar-color: #888 #333;
+        }
+        #customTooltip::-webkit-scrollbar {
+            width: 8px;
+        }
+        #customTooltip::-webkit-scrollbar-track {
+            background: #333;
+            border-radius: 4px;
+        }
+        #customTooltip::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        #customTooltip::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
         }
         #customTooltip b {
             color: #FFD700;
@@ -59,6 +77,48 @@
             font-size: 12px;
             color: #666;
             margin-top: 5px;
+        }
+        .scrollable-content {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #444;
+            padding: 8px;
+            border-radius: 5px;
+            margin: 5px 0;
+            border: 1px solid #555;
+            scrollbar-width: thin;
+            scrollbar-color: #888 #444;
+        }
+        .scrollable-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .scrollable-content::-webkit-scrollbar-track {
+            background: #444;
+            border-radius: 4px;
+        }
+        .scrollable-content::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .scrollable-content::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #333;
+            border-radius: 3px;
+            border-left: 3px solid #007BFF;
+        }
+        .chat-message:last-child {
+            margin-bottom: 0;
+        }
+        .scroll-indicator {
+            text-align: center;
+            font-size: 10px;
+            color: #888;
+            font-style: italic;
+            margin: 2px 0;
         }
     </style>
 </head>
@@ -211,7 +271,7 @@
             content += `<b>Depth:</b> ${agent.depth}<br>`;
             
             if (agent.state.Description) {
-                content += `<b>Description:</b><div style="max-height: 100px; overflow-y: auto; background-color: #444; padding: 5px; border-radius: 3px;">${escapeHtml(agent.state.Description)}</div>`;
+                content += `<b>Description:</b><div class="scrollable-content" style="max-height: 120px;">${escapeHtml(agent.state.Description)}</div>`;
             }
             
             if (agent.state.Tools && agent.state.Tools.length > 0) {
@@ -223,30 +283,41 @@
             }
             
             if (agent.state.Examples && agent.state.Examples.length > 0) {
-                content += `<hr><b>Examples:</b><br>`;
-                const exampleText = agent.state.Examples.slice(0, 2).map(ex => {
-                    return `<b>Request:</b> ${escapeHtml(ex.Request.substring(0, 100))}${ex.Request.length > 100 ? '...' : ''}<br><b>Response:</b> ${escapeHtml(ex.Response.substring(0, 100))}${ex.Response.length > 100 ? '...' : ''}`;
-                }).join('<br><br>');
-                content += `<div style="max-height: 150px; overflow-y: auto; background-color: #444; padding: 5px; border-radius: 3px;">${exampleText}</div>`;
+                content += `<hr><b>Examples (${agent.state.Examples.length}):</b><br>`;
+                const exampleText = agent.state.Examples.slice(0, 3).map((ex, index) => {
+                    return `<div class="chat-message"><b>Example ${index + 1}:</b><br><b>Request:</b> ${escapeHtml(ex.Request)}<br><b>Response:</b> ${escapeHtml(ex.Response)}</div>`;
+                }).join('');
+                content += `<div class="scrollable-content" style="max-height: 200px;">${exampleText}</div>`;
+                if (agent.state.Examples.length > 3) {
+                    content += `<div class="scroll-indicator">Showing 3 of ${agent.state.Examples.length} examples - scroll to see more</div>`;
+                }
             }
             
             const chatHistory = agent.state.ChatHistory;
             if (chatHistory && chatHistory.length > 0) {
                 content += `<hr><b>Chat History (${chatHistory.length} messages):</b><br>`;
-                const recentMessages = chatHistory.slice(-3); // Show last 3 messages
-                const historyText = recentMessages.map(msg => {
-                    let msgContent = `<b>${msg.Role}:</b>`;
+                const allMessages = chatHistory.slice(-10); // Show last 10 messages for scrolling
+                const historyText = allMessages.map((msg, index) => {
+                    let msgContent = `<div class="chat-message">`;
+                    msgContent += `<b>${msg.Role}:</b>`;
                     if (msg.Content) {
-                        const contentPreview = msg.Content.substring(0, 150);
-                        msgContent += ` ${escapeHtml(contentPreview)}${msg.Content.length > 150 ? '...' : ''}`;
+                        msgContent += `<br>${escapeHtml(msg.Content)}`;
                     }
                     if (msg.ToolCalls && msg.ToolCalls.length > 0) {
                         const tools = msg.ToolCalls.map(tc => `[${tc.FunctionName || 'Tool'}]`).join(' ');
-                        msgContent += `<br><i>&rarr; Tools: ${tools}</i>`;
+                        msgContent += `<br><i style="color: #90EE90;">&rarr; Tools: ${tools}</i>`;
                     }
+                    if (msg.Timestamp) {
+                        const time = new Date(msg.Timestamp).toLocaleTimeString();
+                        msgContent += `<br><small style="color: #888;">${time}</small>`;
+                    }
+                    msgContent += `</div>`;
                     return msgContent;
-                }).join('<br><br>');
-                content += `<div style="max-height: 200px; overflow-y: auto; background-color: #444; padding: 5px; border-radius: 3px;">${historyText}</div>`;
+                }).join('');
+                content += `<div class="scrollable-content">${historyText}</div>`;
+                if (chatHistory.length > 10) {
+                    content += `<div class="scroll-indicator">Showing last 10 of ${chatHistory.length} messages - scroll up to see earlier messages</div>`;
+                }
             }
 
             return content;
