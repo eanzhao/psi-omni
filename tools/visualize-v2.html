@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psi Agent Task Relationship Graph</title>
+    <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/standalone/umd/vis-network.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #taskGraph {
+            width: 100%;
+            height: 800px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            margin-top: 20px;
+        }
+        #jsonInput {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        #errorMessage {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #customTooltip {
+            position: absolute;
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            display: none;
+            font-size: 14px;
+            max-width: 400px;
+            z-index: 1000;
+        }
+        #customTooltip b {
+            color: #FFD700;
+        }
+        .depth-indicator {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Psi Agent Task Relationship Graph</h2>
+    <p>Paste your JSON data below and click "Render Graph" to visualize the nested task relationships.</p>
+    <textarea id="jsonInput" placeholder="Paste your JSON data here..."></textarea>
+    <button onclick="renderGraph()">Render Graph</button>
+    <div id="errorMessage"></div>
+    <div id="taskGraph"></div>
+    <div id="customTooltip"></div>
+
+    <script>
+        let network = null;
+        const tooltip = document.getElementById('customTooltip');
+
+        function renderGraph() {
+            const jsonInput = document.getElementById('jsonInput').value;
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.style.display = 'none';
+
+            let data;
+            try {
+                data = JSON.parse(jsonInput);
+            } catch (e) {
+                errorMessage.textContent = 'Error: Invalid JSON format. Please check your input.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            const nodes = new vis.DataSet();
+            const edges = new vis.DataSet();
+
+            // Create nodes for each agent
+            data.forEach(agent => {
+                // Create label from description or agent ID
+                let label = agent.state.Description || agent.state.AgentId || agent.id;
+                if (label.length > 50) {
+                    label = label.substring(0, 47) + '...';
+                }
+
+                nodes.add({
+                    id: agent.id,
+                    label: truncateLabel(label, 25),
+                    shape: 'box',
+                    color: getNodeColor(agent.depth),
+                    tooltipContent: createAgentTooltipContent(agent),
+                    widthConstraint: { maximum: 200 },
+                    heightConstraint: { minimum: 60 }
+                });
+            });
+
+            // Create edges based on parent-child relationships
+            data.forEach(agent => {
+                // Check if agent has a parent and create edge from parent to this agent
+                if (agent.state.Parent && agent.state.Parent !== '') {
+                    // Find parent ID by extracting from the parent string
+                    const parentId = extractAgentIdFromParent(agent.state.Parent, data);
+                    if (parentId) {
+                        edges.add({ 
+                            from: parentId, 
+                            to: agent.id, 
+                            arrows: 'to', 
+                            color: '#007BFF', 
+                            width: 2 
+                        });
+                    }
+                }
+            });
+
+            const container = document.getElementById('taskGraph');
+            const visData = { nodes, edges };
+            const options = {
+                layout: {
+                    hierarchical: {
+                        direction: 'UD',
+                        sortMethod: 'directed',
+                        levelSeparation: 150,
+                        nodeSpacing: 200
+                    }
+                },
+                edges: {
+                    arrows: { to: { enabled: true, scaleFactor: 1 } },
+                    font: { align: 'middle', color: '#333', size: 12 },
+                    color: '#333',
+                    width: 2
+                },
+                nodes: {
+                    font: { size: 12, color: '#333' },
+                    borderWidth: 2,
+                    shape: 'box',
+                    margin: 10
+                },
+                interaction: {
+                    hover: true,
+                    zoomView: true,
+                    dragView: true
+                },
+                physics: false
+            };
+
+            if (network) {
+                network.destroy();
+            }
+            network = new vis.Network(container, visData, options);
+
+            network.on('hoverNode', function(params) {
+                const node = nodes.get(params.node);
+                tooltip.innerHTML = node.tooltipContent;
+                tooltip.style.display = 'block';
+                tooltip.style.left = (params.event.pageX + 10) + 'px';
+                tooltip.style.top = (params.event.pageY + 10) + 'px';
+            });
+
+            network.on('blurNode', function() {
+                tooltip.style.display = 'none';
+            });
+        }
+
+        // Helper function to extract agent ID from parent string
+        function extractAgentIdFromParent(parentString, allAgents) {
+            // Parent format might be like "Aevatar.Core.PublishingGAgent/2b81dccf78134ce6928aae07b9fd9204"
+            // But agent IDs are like "omni.psi/2b81dccf78134ce6928aae07b9fd9204"
+            // So we need to extract the UUID part and find the matching agent
+            if (parentString.includes('/')) {
+                const uuid = parentString.split('/')[1];
+                // Find agent with this UUID in their ID
+                const parentAgent = allAgents.find(agent => agent.id.includes(uuid));
+                return parentAgent ? parentAgent.id : null;
+            }
+            return null;
+        }
+
+        function getNodeColor(depth) {
+            const colors = [
+                '#FF9999', // Depth 0 - Red
+                '#99CCFF', // Depth 1 - Blue
+                '#99FF99', // Depth 2 - Green
+                '#FFCC99', // Depth 3 - Orange
+                '#CC99FF', // Depth 4 - Purple
+                '#FFFF99', // Depth 5 - Yellow
+                '#FF99CC', // Depth 6 - Pink
+                '#99FFFF'  // Depth 7 - Cyan
+            ];
+            return colors[depth % colors.length];
+        }
+
+        function createAgentTooltipContent(agent) {
+            let content = `<b>Agent ID:</b> ${agent.id}<br>`;
+            content += `<b>Depth:</b> ${agent.depth}<br>`;
+            
+            if (agent.state.Description) {
+                content += `<b>Description:</b><div style="max-height: 100px; overflow-y: auto; background-color: #444; padding: 5px; border-radius: 3px;">${escapeHtml(agent.state.Description)}</div>`;
+            }
+            
+            if (agent.state.Tools && agent.state.Tools.length > 0) {
+                content += `<b>Tools:</b> ${agent.state.Tools.join(', ')}<br>`;
+            }
+            
+            if (agent.state.ChildAgents && Object.keys(agent.state.ChildAgents).length > 0) {
+                content += `<b>Child Agents:</b> ${Object.keys(agent.state.ChildAgents).length}<br>`;
+            }
+            
+            if (agent.state.Examples && agent.state.Examples.length > 0) {
+                content += `<hr><b>Examples:</b><br>`;
+                const exampleText = agent.state.Examples.slice(0, 2).map(ex => {
+                    return `<b>Request:</b> ${escapeHtml(ex.Request.substring(0, 100))}${ex.Request.length > 100 ? '...' : ''}<br><b>Response:</b> ${escapeHtml(ex.Response.substring(0, 100))}${ex.Response.length > 100 ? '...' : ''}`;
+                }).join('<br><br>');
+                content += `<div style="max-height: 150px; overflow-y: auto; background-color: #444; padding: 5px; border-radius: 3px;">${exampleText}</div>`;
+            }
+            
+            const chatHistory = agent.state.ChatHistory;
+            if (chatHistory && chatHistory.length > 0) {
+                content += `<hr><b>Chat History (${chatHistory.length} messages):</b><br>`;
+                const recentMessages = chatHistory.slice(-3); // Show last 3 messages
+                const historyText = recentMessages.map(msg => {
+                    let msgContent = `<b>${msg.Role}:</b>`;
+                    if (msg.Content) {
+                        const contentPreview = msg.Content.substring(0, 150);
+                        msgContent += ` ${escapeHtml(contentPreview)}${msg.Content.length > 150 ? '...' : ''}`;
+                    }
+                    if (msg.ToolCalls && msg.ToolCalls.length > 0) {
+                        const tools = msg.ToolCalls.map(tc => `[${tc.FunctionName || 'Tool'}]`).join(' ');
+                        msgContent += `<br><i>&rarr; Tools: ${tools}</i>`;
+                    }
+                    return msgContent;
+                }).join('<br><br>');
+                content += `<div style="max-height: 200px; overflow-y: auto; background-color: #444; padding: 5px; border-radius: 3px;">${historyText}</div>`;
+            }
+
+            return content;
+        }
+
+        function truncateLabel(text, maxLength) {
+            // Remove markdown or special characters for cleaner labels
+            const cleanText = text.replace(/###.*?\n|\n|\*\*.*?\*\*|[^a-zA-Z0-9\s.,%_-]/g, ' ').trim();
+            return cleanText.length > maxLength ? cleanText.substring(0, maxLength - 3) + '...' : cleanText;
+        }
+
+        function escapeHtml(text) {
+            if (typeof text !== 'string') return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
