@@ -1,5 +1,5 @@
 using Aevatar.Core.Abstractions;
-using PsiAgent;
+using PsiOrleans.Common;
 using PsiOrleans.Common.Models;
 
 namespace Aevatar.Workshop.Client;
@@ -11,26 +11,22 @@ public static class PsiGAgentDemo
         var psi = await gAgentFactory.GetGAgentAsync("psi", "psi");
         var publisher = await gAgentFactory.GetGAgentAsync<IPublishingGAgent>(Guid.NewGuid());
 
-        await publisher.PublishEventAsync(new SendConfigEvent
+        var config = GetAgentConfiguration();
+        await publisher.PublishEventAsync(new AgentConfigEvent
+            {
+                Configuration = config,
+                Tools = []
+            },
+            psi);
+        var callId = Guid.NewGuid().ToString();
+        var id = psi.GetGrainId().ToString();
+        var task = "Calculate what percentage of US GDP was contributed by New York state in 2024";
+        await publisher.PublishEventAsync(new UserMessageEvent
         {
-            Configuration = GetAgentConfiguration(),
-            ParenteAgentId = String.Empty
+            TargetAgentId = id,
+            CallId = callId,
+            Content = task
         }, psi);
-        
-        // await publisher.PublishEventAsync(new SendTaskEvent
-        // {
-        //     CallId = Guid.NewGuid().ToString(),
-        //     Task = "percentage of 2 over 24"
-        // }, psi);
-
-        await publisher.PublishEventAsync(new SendTaskEvent
-        {
-            CallId = Guid.NewGuid().ToString(),
-            Task = "Calculate what percentage of US GDP was not contributed by New York state in 2024. After getting an output, validate the answer to make sure it is accurate."
-        }, psi);
-        //"Calculate the sum of these numbers: 32498, 9238, 3298437, 8328, 8329, 9238, 2321423, 34532, 3142, 342"
-        
-        await publisher.PublishEventAsync(new PingEvent(), psi);
 
 
         Console.WriteLine("Published.");
