@@ -3,6 +3,7 @@
 
 # env
 env_setup.sh
+.run
 
 # User-specific files
 *.suo

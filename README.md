@@ -1,174 +1,159 @@
-# Aevatar Workshop Quickstart Guide
+# Aevatar Workshop - Psi Agent Execution Guide
 
-Welcome to the Aevatar Workshop! This guide will help you get started with the core features of the Aevatar framework, focusing on GAgent collaboration. You'll learn how to run the provided demos, understand the basics of event-driven agent communication, and create your own custom GAgent.
-
-## What is Aevatar?
-Aevatar is a framework for building distributed, event-driven systems using agents (GAgents). GAgents can be ordinary agents or AI-powered agents, and they can collaborate to accomplish complex tasks. This workshop repo is designed to help you quickly experience Aevatar's power and flexibility.
-
----
+Welcome to the Aevatar Workshop Psi Agent demo! This guide provides step-by-step instructions to run the complete workflow from agent creation to state visualization.
 
 ## Prerequisites
+
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) installed
 - Git and a Unix-like shell (macOS/Linux recommended)
+- Valid API keys for Azure OpenAI, Tavily, and Google Search
 
----
+## Environment Variables Setup
 
-## 1. Clone and Build the Project
+Before running the demo, you need to set up the following environment variables. All of these are required for the Psi Agent to function properly:
+
+```bash
+export AZURE_OPENAI_DEPLOYMENT_NAME="your-deployment-name"
+export AZURE_OPENAI_API_KEY="your-azure-openai-api-key"
+export AZURE_OPENAI_API_VERSION="2025-01-01-preview"
+export AZURE_OPENAI_ENDPOINT="https://your-resource.cognitiveservices.azure.com/"
+export TAVILY_API_KEY="your-tavily-api-key"
+export GOOGLE_SEARCH_ENGINE_ID="your-google-search-engine-id"
+export GOOGLE_API_KEY="your-google-api-key"
+```
+
+Alternatively, you can create a `.env` file in the project root with these variables.
+
+## Build the Project
 
 ```bash
 git clone git@github.com:aevatarAI/aevatar-workshop.git
 cd aevatar-workshop
-sh quickstart.sh
+dotnet build
 ```
 
-The `quickstart.sh` script will:
-- Build all projects
-- Start the Host service in the background (logs: `host.log`)
-- Start the Client service in the background (logs: `client.log`)
+## Execution Steps
 
-> **Tip:** To stop the services, use the `kill` command shown at the end of the script output.
+### Step 1: Start the Host Service
 
----
+Start the Aevatar Workshop Host service which provides the Orleans cluster and agent hosting:
 
-## 2. Running the Demos
-
-The Client project supports three demos, each demonstrating a different aspect of GAgent collaboration. You can specify which demo to run by passing a mode parameter to `quickstart.sh`:
-
-- **EventHandlerDemo** (mode 0, default): Basic event handler
-- **MultiGAgentDemo** (mode 1): Two GAgents communicating
-- **RouterDemo** (mode 2): Complex AI agent scenario
-
-### 2.1 EventHandlerDemo (mode 0)
-This demo shows the simplest event handler usage. The client sends a `GreetingEvent` to a GAgent, which logs the greeting.
-
-**Run:**
 ```bash
-sh quickstart.sh 0 "Hello, Aevatar"
+cd src/Aevatar.Workshop.Host/bin/Debug/net9.0
+./Aevatar.Workshop.Host
 ```
-- The second argument customizes the greeting message (optional).
-- Check `host.log` for output.
 
-### 2.2 MultiGAgentDemo (mode 1)
-This demo demonstrates two GAgents (Alice and Bob) communicating via events:
-- The client sends a `GreetingEvent` to Alice.
-- Alice handles the event and sends a `ReplyEvent` to Bob.
-- Bob logs the reply.
+**Expected Output:**
+- You should see Orleans cluster startup messages
+- The service will indicate when it's ready to accept connections
+- Look for messages indicating the Orleans port is open
 
-**Run:**
+### Step 2: Run the Create Command
+
+Once the Host is running and Orleans port is open, open a new terminal and run the create command:
+
 ```bash
-sh quickstart.sh 1
+cd src/Psi/bin/Debug/net9.0
+./Psi create "Calculate what percentage of US GDP was contributed by New York state in 2024"
 ```
-- Check `host.log` for the collaboration log between Alice and Bob.
 
-### 2.3 RouterDemo (mode 2)
-This demo showcases a more complex scenario with AI agents:
-- A router agent coordinates a researcher and a writer agent.
-- The researcher gathers information, and the writer generates a report.
-- The process is fully automated and demonstrates multi-agent orchestration.
-
-**Run:**
-- Configure: Open Host's configuration file (src/Aevatar.Workshop.Host/appsettings.json) and configure the SystemLLMConfigs section. Here we have used Azure OpenAI. Please configure your Endpoint and ApiKey.
-
-```json
+**Expected Output:**
+The Host terminal should show something like:
+```
+[17:41:32 INF] Result:
 {
-  "SystemLLMConfigs": {
-    "OpenAI": {
-      "ProviderEnum": "Azure",
-      "ModelIdEnum": "OpenAI",
-      "ModelName": "gpt-4o",
-      "Endpoint": "",
-      "ApiKey": ""
-    }
-  }
+  "Final": "The GDP of the United States for 2024 is $28.5 trillion, and the GDP of New York state for 2024 is $2.2 trillion. The percentage contribution of New York state to the US GDP is approximately 7.72%."
 }
 ```
 
-- Run the demo.
+### Step 3: Run the Continue Command
+
+After the create command finishes successfully, run the continue command:
+
 ```bash
-sh quickstart.sh 2
+./Psi continue "What about California?"
 ```
-- Check `host.log` for the research and report output.
 
----
-
-## 3. Understanding the Demos
-
-### EventHandlerDemo
-- Shows how a GAgent can handle events using event handler methods.
-- Demonstrates the basic event-driven programming model in Aevatar.
-
-### MultiGAgentDemo
-- Illustrates how multiple GAgents can collaborate by sending and handling events.
-- Alice and Bob are both ordinary GAgents, but the same pattern applies to AI agents.
-
-### RouterDemo
-- Demonstrates advanced orchestration with AI agents.
-- Shows how to build workflows where agents have specialized roles and interact to complete a task.
-
----
-
-## 4. Creating Your Own GAgent
-
-You can easily define your own GAgent and use it in the client. Here's how:
-
-### Step 1: Define Your GAgent
-Create a new class in `src/Aevatar.Workshop.GAgent/`, e.g. `MyCustomGAgent.cs`:
-
-```csharp
-using Aevatar.Core;
-using Aevatar.Core.Abstractions;
-
-[GAgent("mycustom", "demo")]
-public class MyCustomGAgent : GAgentBase<StateBase, StateLogEventBase<StateLogEventBase>>
+**Expected Output:**
+The Host terminal should show something like:
+```
+[17:41:48 INF] Result:
 {
-    public override Task<string> GetDescriptionAsync()
-        => Task.FromResult("This is my custom GAgent.");
-
-    [EventHandler]
-    public Task HandleMyEventAsync(MyEvent eventData)
-    {
-        // Your logic here
-        return Task.CompletedTask;
-    }
+  "Final": "The GDP of the United States for 2024 is $28.5 trillion, and the GDP of California state for 2024 is $4.1 trillion. The percentage contribution of California state to the US GDP is approximately 14.39%."
 }
 ```
 
-### Step 2: Define Your Event
-Create a new event class, e.g. `MyEvent.cs`:
+### Step 4: Get the Agent State
 
-```csharp
-using Aevatar.Core.Abstractions;
+After the continue command finishes, run the state command to get the current agent state:
 
-[GenerateSerializer]
-public class MyEvent : EventBase
-{
-    [Id(0)] public string Message { get; set; }
-}
+```bash
+./Psi state
 ```
 
-### Step 3: Use Your GAgent in the Client
-In your client demo (e.g. in `YourOwnDemo.cs`):
+**Expected Output:**
+This will output a JSON representation of the agent state, including all the nested task relationships and chat history.
 
-```csharp
-var myAgent = await gAgentFactory.GetGAgentAsync("mycustom", "demo");
-var publisher = await gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
-await publisher.PublishEventAsync(new MyEvent { Message = "Hello from my custom agent!" }, myAgent);
-```
+### Step 5: Visualize the Agent State
+
+1. Copy the JSON output from the state command
+2. Open `tools/visualize-v2.html` in your web browser
+3. Paste the JSON data into the text box
+4. Click "Render Graph"
+
+> **💡 Quick Demo:** Want to see the visualization in action before running the full demo? You can use the sample data provided in `tools/sample_state.json`. Simply copy the contents of this file and paste it into the visualization tool to see how the agent network looks.
+
+You will see an interactive graph showing:
+- Agent hierarchy and relationships
+- Task flow and dependencies
+- Agent states and chat history
+- Tool usage and interactions
+
+The visualization provides a comprehensive view of how the Psi Agent system orchestrated multiple specialized agents to complete the complex tasks.
+
+## Understanding the Demo
+
+This demo showcases the Aevatar framework's Psi Agent system, which:
+
+1. **Creates** an initial analysis task about New York state's GDP contribution
+2. **Continues** the conversation by extending the analysis to California
+3. **Maintains State** across multiple interactions and agent collaborations
+4. **Orchestrates** multiple specialized agents (research, analysis, web search, etc.)
+5. **Visualizes** the entire agent interaction network and task flow
+
+The Psi Agent system demonstrates advanced multi-agent orchestration, where different agents collaborate to complete complex analytical tasks requiring web research, data analysis, and synthesis.
+
+## Troubleshooting
+
+### Common Issues
+
+**Host Service Won't Start:**
+- Check that .NET 9.0 SDK is installed: `dotnet --version`
+- Ensure no other services are using the Orleans ports
+- Verify all environment variables are set correctly
+
+**API Key Errors:**
+- Verify all API keys are valid and have sufficient quota
+- Check that the Azure OpenAI deployment name matches your actual deployment
+- Ensure the Azure OpenAI endpoint URL is correct
+
+**Psi Commands Fail:**
+- Make sure the Host service is running and ready
+- Check that you're running commands from the correct directory
+- Verify environment variables are available in the terminal session
+
+**Visualization Issues:**
+- Ensure the JSON from the state command is valid
+- Try refreshing the browser page
+- Check browser console for any JavaScript errors
+
+## Next Steps
+
+- Experiment with different query types in the create command
+- Explore the agent state JSON to understand the system architecture
+- Try modifying the visualization HTML to add new features
+- Investigate the source code to understand the Psi Agent implementation
 
 ---
 
-## 5. Where to Look for Output
-- **host.log**: Logs from the Host service (agent backend)
-- **client.log**: Logs from the Client (demo execution, agent collaboration)
-- **Console**: If you run the client directly, output will also appear in your terminal
-
----
-
-## 6. Next Steps
-- Try modifying the demos or creating your own GAgent and event types
-- Explore the `src/Aevatar.Workshop.GAgent/` and `src/Aevatar.Workshop.Client/` directories for more examples
-- Read the other docs in the `docs/` directory for deeper dives into GAgent architecture and event handling
-
----
-
-Happy hacking with Aevatar! 🚀 
+Happy exploring with Aevatar Psi Agents! 🚀 
