@@ -17,9 +17,6 @@ export AZURE_OPENAI_DEPLOYMENT_NAME="your-deployment-name"
 export AZURE_OPENAI_API_KEY="your-azure-openai-api-key"
 export AZURE_OPENAI_API_VERSION="2025-01-01-preview"
 export AZURE_OPENAI_ENDPOINT="https://your-resource.cognitiveservices.azure.com/"
-export TAVILY_API_KEY="your-tavily-api-key"
-export GOOGLE_SEARCH_ENGINE_ID="your-google-search-engine-id"
-export GOOGLE_API_KEY="your-google-api-key"
 ```
 
 Alternatively, you can create a `.env` file in the project root with these variables.
