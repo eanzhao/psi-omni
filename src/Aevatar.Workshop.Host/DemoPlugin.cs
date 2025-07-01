@@ -12,6 +12,7 @@ public static class DemoPlugin
         {
             { "NY", 2200000.0 }, // New York
             { "CA", 4100000.0 }, // California
+            { "TX", 2700000.0 }, // Texas
             // 可扩展更多州
         }.ToImmutableDictionary();
 
@@ -26,6 +27,7 @@ public static class DemoPlugin
     [KernelFunction("GetNYGDP2024")]
     public static Task<double> GetNYGDP2024Async()
         => Task.FromResult(2200000.0); // 单位：百万美元（示例数据）
+
     [KernelFunction("GetCAGDP2024")]
     public static Task<double> GetCAGDP2024Async()
         => Task.FromResult(4100000.0); // 单位：百万美元（示例数据）
@@ -41,6 +43,7 @@ public static class DemoPlugin
         {
             return Task.FromResult(gdp);
         }
+
         return Task.FromResult(0.0); // 未知州返回0
     }
 }
