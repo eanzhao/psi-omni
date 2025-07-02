@@ -14,12 +14,6 @@ public class AgentConfigEvent : EventBase
     public List<string> Tools { get; set; } = new(); //TODO: Kept here to cater to old code. Need to be delelted.
 }
 
-[GenerateSerializer]
-public abstract class UniqueMessageBase : EventBase
-{
-    [Id(0)] public string UniqueId { get; } = Guid.NewGuid().ToString();
-}
-
 /// <summary>
 /// User agent sends to target agent
 /// </summary>
