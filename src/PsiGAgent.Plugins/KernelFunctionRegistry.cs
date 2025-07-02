@@ -72,43 +72,6 @@ public class KernelFunctionRegistry : IKernelFunctionRegistry
         return null;
     }
 
-    
-    // public static FunctionToolDefinition ToToolDefinition(this KernelFunction function, string? pluginName = null)
-    // {
-    //     if (function.Metadata.Parameters.Count > 0)
-    //     {
-    //         BinaryData parameterData = function.Metadata.CreateParameterSpec();
-    //
-    //         return new FunctionToolDefinition(FunctionName.ToFullyQualifiedName(function.Name, pluginName ?? function.PluginName))
-    //         {
-    //             Description = function.Description,
-    //             Parameters = parameterData,
-    //         };
-    //     }
-    //
-    //     return new FunctionToolDefinition(FunctionName.ToFullyQualifiedName(function.Name, pluginName ?? function.PluginName))
-    //     {
-    //         Description = function.Description
-    //     };
-    // }
-    
-    // public List<FunctionToolDefinition> GetAllToolDefinitions()
-    // {
-    //     return _functions.Values.Select(f => new { Function = f, PluginName = string.Empty }).Concat(
-    //         _plugins.Values.SelectMany(p => p.Select(f => new { Function = f, PluginName = p.Name }))
-    //     ).Select(item =>
-    //     {
-    //         if (string.IsNullOrEmpty(item.PluginName))
-    //         {
-    //             return item.Function.ToToolDefinition();
-    //         }
-    //         else
-    //         {
-    //             return item.Function.ToToolDefinition();
-    //         }
-    //     }).ToList();
-    // }
-
     public List<string> GetAllAvailableToolNames()
     {
         var toolNames = new List<string>();
@@ -123,6 +86,4 @@ public class KernelFunctionRegistry : IKernelFunctionRegistry
 
         return toolNames.OrderBy(name => name).ToList();
     }
-    
-    
 }

@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using PsiAgnet.Omni;
 using PsiGAgent.Common;
 using PsiGAgent.Common.Interfaces;
 using PsiGAgent.Common.Models;
@@ -202,20 +201,17 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
     private readonly IKernelFactory _kernelFactory;
     private readonly IGAgentFactory _gAgentFactory;
     private readonly IOrchestratorService _orchestratorService;
-    private readonly IToolService _toolService;
     private readonly HashSet<string> _receivedMessageIds = new HashSet<string>();
 
     public PsiOmniGAgent(
         IKernelFactory kernelFactory,
         IGAgentFactory gAgentFactory,
-        IOrchestratorService orchestratorService,
-        IToolService toolService
+        IOrchestratorService orchestratorService
     )
     {
         _kernelFactory = kernelFactory;
         _gAgentFactory = gAgentFactory;
         _orchestratorService = orchestratorService;
-        _toolService = toolService;
     }
 
     public override Task<string> GetDescriptionAsync()
@@ -439,7 +435,6 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
         if (kernel == null)
             throw new InvalidOperationException("Kernel is not configured for tool execution.");
 
-        kernel.Plugins.AddFromObject(_toolService, "AgentServices");
         return kernel;
     }
 
