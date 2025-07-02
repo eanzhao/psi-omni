@@ -901,7 +901,7 @@ public partial class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgen
         var chatHistory = new ChatHistory();
         chatHistory.AddSystemMessage(systemPrompt);
         var messages =
-            State.ChatHistory.Select(message => ChatMessageConverter.ToSemanticKernelMessage(message));
+            State.ChatHistory.Select(message => message.ToSkMessage());
         chatHistory.AddRange(messages);
 
         return chatHistory;
