@@ -1,6 +1,4 @@
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.AI.Options;
-using Aevatar.GAgents.SemanticKernel.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using PsiGAgent.Common.Interfaces;
 using PsiGAgent.Plugins;
@@ -29,8 +27,6 @@ public class WorkshopHostModule : AbpModule
             true, writeToProviders: true);
         context.Services.AddHttpClient();
         context.Services.AddSingleton<IEventDispatcher, DefaultEventDispatcher>();
-        context.Services.Configure<SystemLLMConfigOptions>(configuration);
-        context.Services.AddSemanticKernel();
         context.Services.AddSingleton<IKernelFactory, KernelFactory>();
         context.Services.AddSingleton<IKernelFunctionRegistry, KernelFunctionRegistry>();
     }
