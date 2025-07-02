@@ -171,21 +171,21 @@
                 });
             });
 
-            // Create edges based on parent-child relationships
+            // Create edges based on the ChildAgents property
             data.forEach(agent => {
-                // Check if agent has a parent and create edge from parent to this agent
-                if (agent.state.Parent && agent.state.Parent !== '') {
-                    // Find parent ID by extracting from the parent string
-                    const parentId = extractAgentIdFromParent(agent.state.Parent, data);
-                    if (parentId) {
-                        edges.add({ 
-                            from: parentId, 
-                            to: agent.id, 
-                            arrows: 'to', 
-                            color: '#007BFF', 
-                            width: 2 
-                        });
-                    }
+                if (agent.state.ChildAgents) {
+                    Object.keys(agent.state.ChildAgents).forEach(childId => {
+                        // Check if the child node exists before creating an edge
+                        if (nodes.get(childId)) {
+                            edges.add({
+                                from: agent.id,
+                                to: childId,
+                                arrows: 'to',
+                                color: '#007BFF',
+                                width: 2
+                            });
+                        }
+                    });
                 }
             });
 
@@ -238,20 +238,6 @@
             });
         }
 
-        // Helper function to extract agent ID from parent string
-        function extractAgentIdFromParent(parentString, allAgents) {
-            // Parent format might be like "Aevatar.Core.PublishingGAgent/2b81dccf78134ce6928aae07b9fd9204"
-            // But agent IDs are like "omni.psi/2b81dccf78134ce6928aae07b9fd9204"
-            // So we need to extract the UUID part and find the matching agent
-            if (parentString.includes('/')) {
-                const uuid = parentString.split('/')[1];
-                // Find agent with this UUID in their ID
-                const parentAgent = allAgents.find(agent => agent.id.includes(uuid));
-                return parentAgent ? parentAgent.id : null;
-            }
-            return null;
-        }
-
         function getNodeColor(depth) {
             const colors = [
                 '#FF9999', // Depth 0 - Red
@@ -275,7 +261,8 @@
             }
             
             if (agent.state.Tools && agent.state.Tools.length > 0) {
-                content += `<b>Tools:</b> ${agent.state.Tools.join(', ')}<br>`;
+                const toolNames = agent.state.Tools.map(tool => escapeHtml(tool.Name || 'Unnamed Tool')).join(', ');
+                content += `<b>Tools:</b> ${toolNames}<br>`;
             }
             
             if (agent.state.ChildAgents && Object.keys(agent.state.ChildAgents).length > 0) {

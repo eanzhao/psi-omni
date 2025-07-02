@@ -94,7 +94,7 @@ public class UpdateSelfDescription : PsiOmniGAgentStateLogEvent
 }
 
 [GAgent("psi", "omni")]
-public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent>
+public partial class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent>
 {
     private static Dictionary<RealizationStatus, string> SytemPrompts = new Dictionary<RealizationStatus, string>()
     {
@@ -200,18 +200,15 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
 
     private readonly IKernelFactory _kernelFactory;
     private readonly IGAgentFactory _gAgentFactory;
-    private readonly IOrchestratorService _orchestratorService;
     private readonly HashSet<string> _receivedMessageIds = new HashSet<string>();
 
     public PsiOmniGAgent(
         IKernelFactory kernelFactory,
-        IGAgentFactory gAgentFactory,
-        IOrchestratorService orchestratorService
+        IGAgentFactory gAgentFactory
     )
     {
         _kernelFactory = kernelFactory;
         _gAgentFactory = gAgentFactory;
-        _orchestratorService = orchestratorService;
     }
 
     public override Task<string> GetDescriptionAsync()
@@ -222,7 +219,6 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
     [EventHandler]
     public async Task HandleSendConfigEventAsync(AgentConfigEvent @event)
     {
-        _orchestratorService.SetConfiguration(@event.Configuration);
         Logger.LogInformation("SendConfigEvent: {Task}", @event.Configuration.Model.ModelId);
         RaiseEvent(new UpdateSendConfigEvent()
         {
@@ -598,7 +594,7 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
         if (kernel == null)
             throw new InvalidOperationException("Kernel is not configured for tool execution.");
 
-        kernel.Plugins.AddFromObject(_orchestratorService, "AgentServices");
+        kernel.Plugins.AddFromObject(this, "AgentServices");
         return kernel;
     }
 
