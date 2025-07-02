@@ -11,6 +11,14 @@ public class RealizationResult
 }
 
 [GenerateSerializer]
+public class AgentCall
+{
+    [Id(0)] public string AgentId { get; set; } = string.Empty;
+    [Id(1)] public string CallId { get; set; } = string.Empty;
+    [Id(2)] public string Message { get; set; } = string.Empty;
+}
+
+[GenerateSerializer]
 public class ToolDefinition
 {
     [Id(0)] public string Name { get; set; } = string.Empty;

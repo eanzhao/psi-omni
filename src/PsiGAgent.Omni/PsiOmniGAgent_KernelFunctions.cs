@@ -100,7 +100,15 @@ public partial class PsiOmniGAgent
                 Content = message,
                 ReplyToAgentId = parentAgentId
             });
-            return $"Message sent for callId: {callId}";
+
+            var call = new AgentCall
+            {
+                AgentId = agentId,
+                CallId = callId,
+                Message = message
+            };
+
+            return $"Agent call sent: {JsonSerializer.Serialize(call)}";
         }
         catch (Exception ex)
         {
