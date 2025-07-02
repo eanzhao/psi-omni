@@ -15,23 +15,30 @@ public enum RealizationStatus
 [GenerateSerializer]
 public class PsiOmniGAgentState : StateBase
 {
-    [Id(0)] public string AgentId { get; set; } = string.Empty;
-    [Id(1)] public RealizationStatus RealizationStatus { get; set; } = RealizationStatus.Unrealized;
-    [Id(2)] public string SystemPrompt { get; set; } = string.Empty;
-    [Id(3)] public List<ToolDefinition> Tools { get; set; } = new();
-    [Id(4)] public Dictionary<string, AgentDescriptor> ChildAgents { get; set; } = new();
-    [Id(5)] public string Description { get; set; } = string.Empty;
-    [Id(6)] public List<AgentExample> Examples { get; set; } = new();
-    [Id(7)] public AgentConfiguration? Configuration { get; set; }
-    [Id(8)] public string UserAgentId { get; set; } = string.Empty;
-    [Id(9)] public string CallId { get; set; } = string.Empty;
-    [Id(10)] public List<ChatMessage> ChatHistory { get; set; } = new();
+    [Id(0)] public int Depth { get; set; } = 0;
+    [Id(1)] public string AgentId { get; set; } = string.Empty;
+    [Id(2)] public RealizationStatus RealizationStatus { get; set; } = RealizationStatus.Unrealized;
+    [Id(3)] public string SystemPrompt { get; set; } = string.Empty;
+    [Id(4)] public List<ToolDefinition> Tools { get; set; } = new();
+    [Id(5)] public Dictionary<string, AgentDescriptor> ChildAgents { get; set; } = new();
+    [Id(6)] public string Description { get; set; } = string.Empty;
+    [Id(7)] public List<AgentExample> Examples { get; set; } = new();
+    [Id(8)] public AgentConfiguration? Configuration { get; set; }
+    [Id(9)] public string UserAgentId { get; set; } = string.Empty;
+    [Id(10)] public string CallId { get; set; } = string.Empty;
+    [Id(11)] public List<ChatMessage> ChatHistory { get; set; } = new();
 }
 
 [GenerateSerializer]
 public class PsiOmniGAgentStateLogEvent : StateLogEventBase<PsiOmniGAgentStateLogEvent>
 {
     [Id(0)] public string UniqueId { get; set; } = Guid.NewGuid().ToString();
+}
+
+[GenerateSerializer]
+public class SetDepthEvent : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public int Depth { get; set; } = 0;
 }
 
 [GenerateSerializer]

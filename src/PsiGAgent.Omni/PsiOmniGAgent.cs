@@ -8,13 +8,12 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 using PsiGAgent.Common;
 using PsiGAgent.Common.Interfaces;
 using PsiGAgent.Common.Models;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace PsiGAgent.Omni;
 
 [GAgent("psi", "omni")]
-public partial class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent>
+public partial class
+    PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>
 {
     private static readonly Dictionary<RealizationStatus, string> SytemPrompts =
         new Dictionary<RealizationStatus, string>()
@@ -130,6 +129,15 @@ public partial class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgen
     {
         _kernelFactory = kernelFactory;
         _gAgentFactory = gAgentFactory;
+    }
+
+    protected override async Task PerformConfigAsync(PsiOmniGAgentConfig configuration)
+    {
+        RaiseEvent(new SetDepthEvent()
+        {
+            Depth = configuration.Depth
+        });
+        await ConfirmEvents();
     }
 
     public override Task<string> GetDescriptionAsync()
@@ -276,6 +284,9 @@ public partial class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgen
 
         switch (@event)
         {
+            case SetDepthEvent payload:
+                state.Depth = payload.Depth;
+                break;
             case UpdateSendConfigEvent payload:
                 if (state.AgentId.IsNullOrEmpty())
                 {

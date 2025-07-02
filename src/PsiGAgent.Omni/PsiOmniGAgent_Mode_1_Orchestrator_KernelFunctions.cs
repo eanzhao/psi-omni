@@ -35,7 +35,10 @@ public partial class PsiOmniGAgent
             }
 
             // Create and initialize the new agent
-            var psi = await _gAgentFactory.GetGAgentAsync("psi", "omni");
+            var psi = await _gAgentFactory.GetGAgentAsync("psi", "omni", new PsiOmniGAgentConfig()
+            {
+                Depth = State.Depth + 1
+            });
             var agentId = psi.GetGrainId();
             // There's a publisher tied to each parent agent.
             await PublishAsync(psi.GetGrainId(), new AgentConfigEvent
