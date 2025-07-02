@@ -28,9 +28,6 @@ public class OrchestratorService : IOrchestratorService
     private ReaderWriterLock _configLock;
     private AgentConfiguration? _agentConfiguration;
 
-    // Static registry to track all created agents across the system
-    private static readonly ConcurrentDictionary<string, List<AgentDescriptor>> ChildrenRegistry = new();
-
     public OrchestratorService(
         IGAgentFactory gAgentFactory,
         ILogger<OrchestratorService> logger
@@ -50,7 +47,6 @@ public class OrchestratorService : IOrchestratorService
 
     public void UpdateChildAgents(string parentAgentId, List<AgentDescriptor> childAgents)
     {
-        ChildrenRegistry.AddOrUpdate(parentAgentId, childAgents, (key, val) => childAgents);
     }
 
     private AgentConfiguration? GetAgentConfiguration()
@@ -117,13 +113,6 @@ public class OrchestratorService : IOrchestratorService
                 }
             };
 
-            if (!ChildrenRegistry.TryGetValue(parentAgentId, out var children))
-            {
-                children = new List<AgentDescriptor>();
-            }
-
-            children.Add(descriptor);
-
             return $"Created the following agent and sent the subtask ${callId} to it:\n{JsonSerializer.Serialize(descriptor)}";
         }
         catch (Exception ex)
@@ -131,41 +120,6 @@ public class OrchestratorService : IOrchestratorService
             var errorMessage = $"❌ Error creating agent for parent {parentAgentId}: {ex.Message}";
             _logger.LogError(ex, "❌ Error creating agent for parent {Parent}", parentAgentId);
             return errorMessage;
-        }
-    }
-
-    /// <summary>
-    /// List all created agents with their metadata
-    /// </summary>
-    [KernelFunction("list_child_agents")]
-    [Description("Lists all child agents for this agent that is acting as an orchestrator.")]
-    public async Task<string> ListChildAgentsAsync(
-        [Description("The ID of the parent agent.")]
-        string parentAgentId
-    )
-    {
-        try
-        {
-            if (!ChildrenRegistry.Any() || !ChildrenRegistry.ContainsKey(parentAgentId))
-            {
-                return "No agents have been created.";
-            }
-
-            var agents = ChildrenRegistry[parentAgentId];
-
-            var result = $@"📋 Created Agents Registry:
-Total: {agents.Count} agents
-
-Child Agents Details:
-{string.Join("\n", agents.Select(a => JsonSerializer.Serialize(a)))}
-";
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Error listing created agents");
-            return $"❌ Error listing created agents: {ex.Message}";
         }
     }
 
