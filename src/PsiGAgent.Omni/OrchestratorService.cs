@@ -13,7 +13,6 @@ namespace PsiGAgent.Omni;
 public interface IOrchestratorService
 {
     void SetConfiguration(AgentConfiguration agentConfiguration);
-    void UpdateChildAgents(string parentAgentId, List<AgentDescriptor> childAgents);
 }
 
 /// <summary>

@@ -839,9 +839,6 @@ public class PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLo
                     {
                         await RunIntrospectionAsync();
                     }
-
-                    _orchestratorService.UpdateChildAgents(this.GetGrainId().ToString(),
-                        State.ChildAgents.Values.ToList());
                 });
                 break;
             case GrowChatHistoryEvent payload:
