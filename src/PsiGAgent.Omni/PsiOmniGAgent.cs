@@ -25,6 +25,7 @@ public partial class
                                              ## ORCHESTRATOR MODE
                                              - The agent will not perform any specific task. It will break down the task into sub-tasks and create child agents to handle the sub-tasks.
                                              - The child agents can be re-used to perform similar sub-tasks.
+                                             - A root agent (with depth value 0) should always operate in ORCHESTRATOR mode.
 
                                              ## SPECIALIZED MODE
                                              - The agent will perform a specific task. It will use the tools given to it to perform the task.
@@ -183,6 +184,7 @@ public partial class
         {
             case RealizationStatus.Unrealized:
                 kernel = GetKernel_Analyzer();
+                systemPrompt += $"\n\n## Depth Value\n<depth>{State.Depth}</depth>";
                 systemPrompt += $"\n\n## Available Tools:\n{GetAllToolDefinitions()}";
                 (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
                 OnChatDoneAsync_Analyzer(chatHistory, preHistoryLength);
