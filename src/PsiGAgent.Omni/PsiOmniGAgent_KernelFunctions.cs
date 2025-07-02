@@ -58,14 +58,13 @@ public partial class PsiOmniGAgent
                 {
                     new AgentExample
                     {
-                        Request = task,
-                        Response = string.Empty
+                        Request = task
                     }
                 }
             };
 
             return
-                $"Created the following agent and sent the subtask ${callId} to it:\n{JsonSerializer.Serialize(descriptor)}";
+                $"Created the following agent and sent the subtask {callId} to it:\n{JsonSerializer.Serialize(descriptor)}";
         }
         catch (Exception ex)
         {

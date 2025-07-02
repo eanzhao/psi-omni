@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PsiGAgent.Omni;
 
@@ -7,7 +8,9 @@ namespace PsiGAgent.Omni;
 public class AgentExample : IEquatable<AgentExample>
 {
     [Id(0)] public string Request { get; set; } = string.Empty;
-    [Id(1)] public string Response { get; set; } = string.Empty;
+
+    [Id(1), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Response { get; set; }
 
     public bool Equals(AgentExample? other)
     {
