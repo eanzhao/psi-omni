@@ -7,7 +7,7 @@ namespace Aevatar.Workshop.Client;
 
 public static class Startup
 {
-    public static async Task<IServiceProvider> RunAsync(string[] args)
+    public static async Task<IServiceProvider> RunAsync(string[] args, bool silent = false)
     {
         var builder = Host.CreateDefaultBuilder(args)
             .UseOrleansClient(client =>
@@ -16,7 +16,14 @@ public static class Startup
                     .AddMemoryStreams(AevatarCoreConstants.StreamProvider)
                     .UseAevatar(true);
             })
-            .ConfigureLogging(logging => logging.AddConsole())
+            .ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                if (!silent)
+                {
+                    logging.AddConsole();
+                }
+            })
             .UseConsoleLifetime();
 
         var host = builder.Build();

@@ -31,11 +31,13 @@ class Program
         listCommand.SetHandler(async () => { await ListCachedAgentsAsync(); });
 
         var stateIdArg = new Argument<string?>("id", () => null, "Agent ID (optional, defaults to last cached)");
+        var silentOption = new Option<bool>("--silent", () => true, "Suppress console output");
         var stateCommand = new Command("state", "View state of a selected agent by ID")
         {
-            stateIdArg
+            stateIdArg,
+            silentOption
         };
-        stateCommand.SetHandler(async (string? id) =>
+        stateCommand.SetHandler(async (string? id, bool silent) =>
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -49,20 +51,21 @@ class Program
                 id = ids[^1]; // last cached id
             }
 
-            var (gAgentFactory, _) = await InitAsync();
+            var (gAgentFactory, serviceProvider) = await InitAsync(silent);
             await ViewAgentStateAsync(gAgentFactory, id);
-        }, stateIdArg);
+        }, stateIdArg, silentOption);
 
         var clearCacheCommand = new Command("clear", "Clear the cached agent IDs");
         clearCacheCommand.SetHandler(async () => { await ClearCacheAsync(); });
 
         var continueMessageArg = new Argument<string>("message", "User message to continue the conversation");
         var continueIdArg = new Argument<string?>("id", () => null, "Agent ID (optional, defaults to last cached)");
-        var continueCommand = new Command("continue", "Send a ContinueConversationEvent to the specified or last cached agent")
-        {
-            continueMessageArg,
-            continueIdArg
-        };
+        var continueCommand =
+            new Command("continue", "Send a ContinueConversationEvent to the specified or last cached agent")
+            {
+                continueMessageArg,
+                continueIdArg
+            };
         continueCommand.SetHandler(async (string message, string? id) =>
         {
             if (string.IsNullOrEmpty(id))
@@ -100,9 +103,9 @@ class Program
         return await rootCommand.InvokeAsync(args);
     }
 
-    static async Task<(IGAgentFactory, IServiceProvider)> InitAsync()
+    static async Task<(IGAgentFactory, IServiceProvider)> InitAsync(bool silent = false)
     {
-        var serviceProvider = await Startup.RunAsync(Array.Empty<string>());
+        var serviceProvider = await Startup.RunAsync(Array.Empty<string>(), silent);
         var gAgentFactory = (IGAgentFactory)serviceProvider.GetService(typeof(IGAgentFactory));
         return (gAgentFactory, serviceProvider);
     }
