@@ -4,12 +4,14 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using PsiGAgent.Common.Interfaces;
 using PsiGAgent.Common.Models;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace PsiGAgent.Omni;
 
 public static class Extensions
 {
-        /// <summary>
+    /// <summary>
     /// Converts a ChatMessage to a Semantic Kernel ChatMessageContent.
     /// </summary>
     /// <param name="message">The ChatMessage to convert.</param>
@@ -94,14 +96,14 @@ public static class Extensions
 
         return chatMessage;
     }
-    
+
     public static T DeepClone<T>(this T obj) where T : new()
     {
         var options = new JsonSerializerOptions();
         var json = JsonSerializer.Serialize(obj, options);
         try
         {
-            return JsonSerializer.Deserialize<T>(json, options)?? new T();
+            return JsonSerializer.Deserialize<T>(json, options) ?? new T();
         }
         catch (Exception e)
         {
@@ -133,5 +135,63 @@ public static class Extensions
                 Schema = p.Schema?.RootElement.Clone().ToString() ?? string.Empty
             }).ToList()
         };
+    }
+
+    public static string ToYaml(this List<JsonElement> jsonElements)
+    {
+        // This is our robust, manual converter.
+        object? ConvertToPlainObject(JsonElement element)
+        {
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.Object:
+                    // For objects, create a Dictionary
+                    var dict = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var property in element.EnumerateObject())
+                    {
+                        dict[property.Name] = ConvertToPlainObject(property.Value);
+                    }
+
+                    return dict;
+
+                case JsonValueKind.Array:
+                    // For arrays, create a List
+                    var list = new List<object?>();
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        list.Add(ConvertToPlainObject(item));
+                    }
+
+                    return list;
+
+                case JsonValueKind.String:
+                    return element.GetString();
+
+                case JsonValueKind.Number:
+                    return element.GetDecimal(); // Or GetDouble(), GetInt32(), etc. as appropriate
+
+                case JsonValueKind.True:
+                    return true;
+
+                case JsonValueKind.False:
+                    return false;
+
+                case JsonValueKind.Null:
+                    return null;
+
+                case JsonValueKind.Undefined:
+                default:
+                    return null; // Or throw an exception if you want to be strict
+            }
+        }
+
+        // Manually convert each JsonElement to a plain .NET object.
+        var listOfDotnetObjects = jsonElements.Select(el => ConvertToPlainObject(el)).ToList();
+
+        var serializer = new SerializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .Build();
+
+        return serializer.Serialize(listOfDotnetObjects);
     }
 }
