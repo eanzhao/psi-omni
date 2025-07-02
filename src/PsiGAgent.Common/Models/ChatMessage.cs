@@ -13,17 +13,6 @@ public class ToolCall
 
 [Serializable]
 [GenerateSerializer]
-public class ChildInteraction
-{
-    [Id(0)] public string InteractionType { get; set; } = string.Empty; // e.g. "TaskAssignment", "FollowUp", "Cancel"
-    [Id(1)] public string ChildAgentId { get; set; } = string.Empty;
-    [Id(2)] public string? CallId { get; set; }
-    [Id(3)] public string Payload { get; set; } = string.Empty;
-    [Id(4)] public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-}
-
-[Serializable]
-[GenerateSerializer]
 public class SerializedChatMessageContent
 {
     [Id(0)] public string TypeFullName { get; set; } = string.Empty;
@@ -46,8 +35,6 @@ public class ChatMessage
 
     [Id(5)] public List<ToolCall> ToolCalls { get; set; } = new();
     [Id(6)] public SerializedChatMessageContent? Serialized { get; set; }
-
-    [Id(7)] public List<ChildInteraction> ChildInteractions { get; set; } = new();
 
     /// <summary>
     /// Default constructor
