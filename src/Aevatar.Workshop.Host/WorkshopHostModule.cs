@@ -3,7 +3,6 @@ using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.SemanticKernel.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using PsiGAgent.Common.Interfaces;
-using PsiGAgent.Omni;
 using PsiGAgent.Plugins;
 using Serilog;
 using Volo.Abp.AspNetCore.Serilog;
@@ -34,6 +33,5 @@ public class WorkshopHostModule : AbpModule
         context.Services.AddSemanticKernel();
         context.Services.AddSingleton<IKernelFactory, KernelFactory>();
         context.Services.AddSingleton<IKernelFunctionRegistry, KernelFunctionRegistry>();
-        context.Services.AddSingleton<IOrchestratorService, OrchestratorService>();
     }
 }
