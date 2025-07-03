@@ -42,15 +42,18 @@ public class GoogleSearchEngine : ISearchEngine
         try
         {
             var searchUrl = BuildSearchUrl(query, numResults, lang, country);
+            _logger.LogInformation("Google search URL: {SearchUrl}", searchUrl);
+            
             var response = await _httpClient.GetAsync(searchUrl, cancellationToken);
 
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Google search failed with status: {StatusCode}", response.StatusCode);
+                _logger.LogWarning("Google search failed with status: {StatusCode}, Response: {ResponseContent}", 
+                    response.StatusCode, responseContent);
                 return new List<SearchResult>();
             }
-
-            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             var googleResponse = JsonSerializer.Deserialize<GoogleSearchResponse>(responseContent);
 
             if (googleResponse?.Items == null)
@@ -83,18 +86,25 @@ public class GoogleSearchEngine : ISearchEngine
 
     private string BuildSearchUrl(string query, int numResults, string? lang, string? country)
     {
-        var url = $"{GoogleSearchApiUrl}?key={_apiKey}&cx={_searchEngineId}&q={Uri.EscapeDataString(query)}&num={Math.Min(numResults, 10)}";
-
-        if (!string.IsNullOrEmpty(lang))
+        // Build base URL with only required parameters first
+        var baseUrl = $"{GoogleSearchApiUrl}?key={_apiKey}&cx={_searchEngineId}&q={Uri.EscapeDataString(query)}";
+        
+        // Add number of results (max 10 for Custom Search API)
+        var clampedResults = Math.Max(1, Math.Min(numResults, 10));
+        baseUrl += $"&num={clampedResults}";
+        
+        // Only add optional parameters if they're meaningful
+        if (!string.IsNullOrEmpty(lang) && lang.ToLower() != "en")
         {
-            url += $"&lr=lang_{lang}";
+            baseUrl += $"&lr=lang_{lang.ToLower()}";
         }
-        if (!string.IsNullOrEmpty(country))
+        
+        if (!string.IsNullOrEmpty(country) && country.ToLower() != "us")
         {
-            url += $"&gl={country.ToLower()}";
+            baseUrl += $"&gl={country.ToLower()}";
         }
 
-        return url;
+        return baseUrl;
     }
 
     private class GoogleSearchResponse
