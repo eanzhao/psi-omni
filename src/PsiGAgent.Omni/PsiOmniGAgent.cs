@@ -11,7 +11,7 @@ using PsiGAgent.Common.Models;
 
 namespace PsiGAgent.Omni;
 
-[GAgent("psi", "omni")]
+[GAgent("omni", "psi")]
 public partial class
     PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>
 {

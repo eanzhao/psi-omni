@@ -35,7 +35,7 @@ public partial class PsiOmniGAgent
             }
 
             // Create and initialize the new agent
-            var psi = await _gAgentFactory.GetGAgentAsync("psi", "omni", new PsiOmniGAgentConfig()
+            var psi = await _gAgentFactory.GetGAgentAsync("omni", "psi", new PsiOmniGAgentConfig()
             {
                 Depth = State.Depth + 1
             });

@@ -143,7 +143,7 @@ class Program
 
     static async Task CreateAgentAndCacheAsync(IGAgentFactory gAgentFactory, string task)
     {
-        var psi = await gAgentFactory.GetGAgentAsync("psi", "omni");
+        var psi = await gAgentFactory.GetGAgentAsync("omni", "psi");
         var publisher = await gAgentFactory.GetGAgentAsync<IPublishingGAgent>(Guid.NewGuid());
         var config = GetAgentConfiguration();
         await publisher.PublishEventAsync(new AgentConfigEvent
