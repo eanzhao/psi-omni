@@ -15,7 +15,7 @@ namespace PsiGAgent.Omni;
 public partial class
     PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>
 {
-    private static readonly Dictionary<RealizationStatus, string> SytemPrompts =
+    private static readonly Dictionary<RealizationStatus, string> SystemPrompts =
         new Dictionary<RealizationStatus, string>()
         {
             [RealizationStatus.Unrealized] = """
@@ -83,41 +83,16 @@ public partial class
             [RealizationStatus.Specialized] = "" // TODO:
         };
 
-    private string INTROSPECTOR_SYSTEM_PROMPT = """
-                                                You are an agent manager that understands the capabilities of the agents.
-
-                                                ## Task
-                                                - You are trying to understand the capabilities of an agent that works as an orchestrator and delegates its agent.
-                                                - Derive the capabilities of the agent from the capabilities of the child agents.
-                                                - Prepare a description of the agent's capabilities.
-                                                - Understand the category of tasks the agent can handle.
-                                                - Avoid putting specific tasks in the description.
-                                                """;
-
-    string SYSTEM_PROMPT = """
-                           You are a helpful assistant that can interact with the user, analyze the user's request,
-                           break down the request into sub-tasks and create new agents or re-use existing agents to handle the sub-tasks.
-                           You can create new agents with the create_agent function.
-                           You can list the created agents with the list_created_agents function.
-                           You can list the available tools with the list_available_tools function.
-
-                           ## What you are supposed to do
-                           - You are the orchestrator of the agents.
-                           - You always try to understand the user's request and break it down into sub-tasks.
-                           - You are responsible for creating new agents and managing them.
-                           - You are responsible for the overall flow of the conversation.
-                           - You DON'T use tools other than those for managing agents.
-
-
-
-                           ## Rules for creating agents
-                           - Agents will use the tools given to them.
-                           - Apply separation of concerns. An agent should be responsible for one type of task instead of using tools that are not related by nature.
-
-                           ## Minimize interaction with the user
-                           - Don't be verbose and keep asking for confirmation from the user.
-                           - Apply your best judgement to create agents without asking for permission.
-                           """;
+    private const string IntrospectorSystemPrompt = """
+                                                    You are an agent manager that understands the capabilities of the agents.
+  
+                                                    ## Task
+                                                    - You are trying to understand the capabilities of an agent that works as an orchestrator and delegates its agent.
+                                                    - Derive the capabilities of the agent from the capabilities of the child agents.
+                                                    - Prepare a description of the agent's capabilities.
+                                                    - Understand the category of tasks the agent can handle.
+                                                    - Avoid putting specific tasks in the description.
+                                                    """;
 
     private readonly IKernelFactory _kernelFactory;
     private readonly IGAgentFactory _gAgentFactory;
@@ -179,7 +154,7 @@ public partial class
         Kernel kernel;
         ChatHistory chatHistory;
         int preHistoryLength;
-        var systemPrompt = SytemPrompts[State.RealizationStatus];
+        var systemPrompt = SystemPrompts[State.RealizationStatus];
         switch (State.RealizationStatus)
         {
             case RealizationStatus.Unrealized:
@@ -298,7 +273,6 @@ public partial class
                     state.UserAgentId = payload.Event.ParentAgentId;
                     state.Configuration = config;
                     // state.Tools = payload.Event.Tools; // Not needed here. No tools should be configured here.
-                    state.SystemPrompt = SYSTEM_PROMPT + $"\nYour agent id is: {grainId}";
                 }
 
                 break;

@@ -23,7 +23,7 @@ public partial class PsiOmniGAgent
     {
         var kernel = GetKernel_Introspector();
         var chatHistory = new ChatHistory();
-        chatHistory.AddSystemMessage(INTROSPECTOR_SYSTEM_PROMPT);
+        chatHistory.AddSystemMessage(IntrospectorSystemPrompt);
         chatHistory.AddUserMessage(
             $"Prepare a description for the agent with the following child agents:\n{GetChildrenDescriptions()}");
         // 1. 获取 chat completion 服务
