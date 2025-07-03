@@ -4,6 +4,10 @@
 # env
 env_setup.sh
 .run
+.env
+
+# Claude
+.claude
 
 # User-specific files
 *.suo
