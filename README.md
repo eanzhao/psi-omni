@@ -1,6 +1,6 @@
-# Aevatar Workshop - Psi Agent Execution Guide
+# Psi Omni Agent
 
-Welcome to the Aevatar Workshop Psi Agent demo! This guide provides step-by-step instructions to run the complete workflow from agent creation to state visualization.
+Welcome to the Psi Omni Agent demo! This guide provides step-by-step instructions to run the complete workflow from agent creation to state visualization.
 
 ## Prerequisites
 
@@ -24,8 +24,8 @@ Alternatively, you can create a `.env` file in the project root with these varia
 ## Build the Project
 
 ```bash
-git clone git@github.com:aevatarAI/aevatar-workshop.git
-cd aevatar-workshop
+git clone https://github.com/gldeng/psi-omni.git
+cd psi-omni
 dotnet build
 ```
 
@@ -33,7 +33,7 @@ dotnet build
 
 ### Step 1: Start the Host Service
 
-Start the Aevatar Workshop Host service which provides the Orleans cluster and agent hosting:
+Start the Host service which provides the Orleans cluster and agent hosting:
 
 ```bash
 cd src/Aevatar.Workshop.Host/bin/Debug/net9.0
