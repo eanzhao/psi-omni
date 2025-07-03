@@ -54,6 +54,9 @@ public class AevatarWorkshopHostedService : IHostedService
             // functionRegistry.RegisterFunction("GetNYGDP2024", demoPlugin["GetNYGDP2024"]);
             functionRegistry.RegisterFunction("CalculatePercentage", demoPlugin["CalculatePercentage"]);
 
+            // Register web search functions
+            WebSearchFunctionRegistration.RegisterAllWebSearchFunctions(functionRegistry, _serviceProvider);
+            
             // var tavilyTextSearch = GetTavilyTextSearch();
             // functionRegistry.RegisterPlugin("TavilyWebSearch",
             //     tavilyTextSearch.CreateWithGetTextSearchResults("TavilyWebSearch",

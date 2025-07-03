@@ -9,7 +9,11 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SemanticKernel" />
-    <ProjectReference Include="Microsoft.SemanticKernel.Agents.OpenAI"/>
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="HtmlAgilityPack" />
+    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.OpenAI"/>
   </ItemGroup>
 
   <ItemGroup>

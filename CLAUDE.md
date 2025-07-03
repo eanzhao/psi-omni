@@ -87,6 +87,13 @@ AZURE_OPENAI_API_VERSION="2025-01-01-preview"
 AZURE_OPENAI_ENDPOINT="https://your-resource.cognitiveservices.azure.com/"
 ```
 
+Optional for web search functionality:
+```bash
+GOOGLE_API_KEY="your-google-api-key"
+GOOGLE_SEARCH_ENGINE_ID="your-custom-search-engine-id"
+BING_API_KEY="your-bing-api-key"  # Optional fallback engine
+```
+
 ## Key Technical Details
 
 ### Agent State Management
@@ -98,6 +105,19 @@ AZURE_OPENAI_ENDPOINT="https://your-resource.cognitiveservices.azure.com/"
 - Agents can use various tools (web search, math, etc.)
 - Tool selection determined during agent analysis phase
 - Plugin system via `PsiGAgent.Plugins`
+- **Web Search**: Complete OpenManus WebSearch implementation with `_try_all_engines`
+  - **Multi-Engine Support**: Google (primary), DuckDuckGo, Bing (fallbacks)
+  - **Automatic Failover**: Tries engines in order with retry logic
+  - **Exponential Backoff**: 3 retries per engine with 1-10 second delays
+  - `WebSearch.Execute`: Main search function matching OpenManus exactly
+  - `WebSearch.QuickSearch`: Simplified search with text summary
+  - `WebSearch.FetchContent`: Download content from specific URLs
+  - `WebSearch.FetchMultipleContent`: Concurrent content fetching
+- **Content Processing**: Exact match to OpenManus content fetching
+  - Removes script, style, header, footer, nav elements (same as OpenManus)
+  - BeautifulSoup-equivalent text extraction with HtmlAgilityPack
+  - 10-second timeout and 10,000 character limit (matching OpenManus)
+  - Same user agent and error handling patterns
 
 ### Message Handling
 - Internal `ChatMessage` format used for agent communication
@@ -124,6 +144,9 @@ AZURE_OPENAI_ENDPOINT="https://your-resource.cognitiveservices.azure.com/"
 - `ChatMessage`: Internal message format with Semantic Kernel integration
 - `KernelFactory`: Creates and configures Semantic Kernel instances
 - `AgentConfiguration`: Agent setup and tool selection
+- `WebSearchService`: Multi-engine search with `_try_all_engines` matching OpenManus exactly
+- `GoogleSearchEngine`, `DuckDuckGoSearchEngine`, `BingSearchEngine`: Individual search engines
+- `WebContentFetcher`: Content fetching matching OpenManus fetch_content function
 
 ## Visualization
 

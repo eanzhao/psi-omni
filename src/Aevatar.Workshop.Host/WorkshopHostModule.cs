@@ -2,6 +2,7 @@ using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using PsiGAgent.Common.Interfaces;
 using PsiGAgent.Plugins;
+using PsiGAgent.Plugins.Services;
 using Serilog;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
@@ -29,5 +30,20 @@ public class WorkshopHostModule : AbpModule
         context.Services.AddSingleton<IEventDispatcher, DefaultEventDispatcher>();
         context.Services.AddSingleton<IKernelFactory, KernelFactory>();
         context.Services.AddSingleton<IKernelFunctionRegistry, KernelFunctionRegistry>();
+        
+        // Register web search services
+        context.Services.AddHttpClient<WebContentFetcher>();
+        context.Services.AddSingleton<IWebContentFetcher, WebContentFetcher>();
+        
+        // Register all search engines
+        context.Services.AddHttpClient<GoogleSearchEngine>();
+        context.Services.AddHttpClient<DuckDuckGoSearchEngine>();
+        context.Services.AddHttpClient<BingSearchEngine>();
+        context.Services.AddSingleton<ISearchEngine, GoogleSearchEngine>();
+        context.Services.AddSingleton<ISearchEngine, DuckDuckGoSearchEngine>();
+        context.Services.AddSingleton<ISearchEngine, BingSearchEngine>();
+        
+        // Register main web search service
+        context.Services.AddSingleton<IWebSearchService, WebSearchService>();
     }
 }

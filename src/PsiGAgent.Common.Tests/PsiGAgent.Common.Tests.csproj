@@ -13,6 +13,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.SemanticKernel" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" />
+    <PackageReference Include="Moq" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
@@ -24,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\PsiGAgent.Common\PsiGAgent.Common.csproj" />
     <ProjectReference Include="..\PsiGAgent.Omni\PsiGAgent.Omni.csproj" />
+    <ProjectReference Include="..\PsiGAgent.Plugins\PsiGAgent.Plugins.csproj" />
   </ItemGroup>
 
 </Project>
