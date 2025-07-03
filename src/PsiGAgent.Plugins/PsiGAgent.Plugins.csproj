@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>PsiGAgent.Plugins</RootNamespace>
+    <EnableSKExperimentalFeatures>true</EnableSKExperimentalFeatures>
+    <NoWarn>$(NoWarn);SKEXP0050</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +16,7 @@
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="System.Text.Json" />
     <PackageReference Include="Microsoft.SemanticKernel.Agents.OpenAI"/>
+    <PackageReference Include="Microsoft.SemanticKernel.Plugins.Web" />
   </ItemGroup>
 
   <ItemGroup>

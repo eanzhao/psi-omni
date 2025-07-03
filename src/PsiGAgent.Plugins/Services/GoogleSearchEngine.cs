@@ -1,29 +1,35 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel.Plugins.Web.Google;
 using PsiGAgent.Plugins.Models;
 
 namespace PsiGAgent.Plugins.Services;
 
 /// <summary>
-/// Google search engine implementation
+/// Google search engine implementation using Microsoft.SemanticKernel.Plugins.Web.Google.GoogleTextSearch
 /// </summary>
 public class GoogleSearchEngine : ISearchEngine
 {
-    private readonly HttpClient _httpClient;
     private readonly ILogger<GoogleSearchEngine> _logger;
-    private readonly string? _apiKey;
-    private readonly string? _searchEngineId;
-    private const string GoogleSearchApiUrl = "https://www.googleapis.com/customsearch/v1";
+    private readonly GoogleTextSearch? _googleTextSearch;
 
     public string Name => "google";
 
-    public GoogleSearchEngine(HttpClient httpClient, ILogger<GoogleSearchEngine> logger)
+    public GoogleSearchEngine(ILogger<GoogleSearchEngine> logger)
     {
-        _httpClient = httpClient;
         _logger = logger;
-        _apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
-        _searchEngineId = Environment.GetEnvironmentVariable("GOOGLE_SEARCH_ENGINE_ID");
+        
+        var apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
+        var searchEngineId = Environment.GetEnvironmentVariable("GOOGLE_SEARCH_ENGINE_ID");
+        
+        if (!string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(searchEngineId))
+        {
+            _googleTextSearch = new GoogleTextSearch(searchEngineId, apiKey);
+            _logger.LogInformation("Google search engine initialized successfully");
+        }
+        else
+        {
+            _logger.LogWarning("Google API credentials not configured. Missing GOOGLE_API_KEY or GOOGLE_SEARCH_ENGINE_ID");
+        }
     }
 
     public async Task<List<SearchResult>> PerformSearchAsync(
@@ -33,48 +39,44 @@ public class GoogleSearchEngine : ISearchEngine
         string? country,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(_apiKey) || string.IsNullOrEmpty(_searchEngineId))
+        if (_googleTextSearch == null)
         {
-            _logger.LogWarning("Google API credentials not configured");
+            _logger.LogWarning("Google search service not available - missing API credentials");
             return new List<SearchResult>();
         }
 
         try
         {
-            var searchUrl = BuildSearchUrl(query, numResults, lang, country);
-            _logger.LogInformation("Google search URL: {SearchUrl}", searchUrl);
+            _logger.LogInformation("Performing Google search for query: {Query} with {NumResults} results", query, numResults);
             
-            var response = await _httpClient.GetAsync(searchUrl, cancellationToken);
-
-            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Google search failed with status: {StatusCode}, Response: {ResponseContent}", 
-                    response.StatusCode, responseContent);
-                return new List<SearchResult>();
-            }
-            var googleResponse = JsonSerializer.Deserialize<GoogleSearchResponse>(responseContent);
-
-            if (googleResponse?.Items == null)
-            {
-                return new List<SearchResult>();
-            }
+            // Use Microsoft.SemanticKernel.Plugins.Web.Google.GoogleTextSearch
+            // Using simple query without options for now since the API is experimental
+            var searchResults = await _googleTextSearch.GetTextSearchResultsAsync(
+                query,
+                null, // options
+                cancellationToken);
 
             var results = new List<SearchResult>();
-            for (int i = 0; i < googleResponse.Items.Length && i < numResults; i++)
+            var position = 1;
+            
+            // Convert KernelSearchResults to our SearchResult format
+            var resultCount = 0;
+            await foreach (var result in searchResults.Results)
             {
-                var item = googleResponse.Items[i];
+                if (resultCount >= numResults) break;
+                
                 results.Add(new SearchResult
                 {
-                    Position = i + 1,
-                    Url = item.Link ?? string.Empty,
-                    Title = item.Title ?? $"Result {i + 1}",
-                    Description = item.Snippet ?? string.Empty,
+                    Position = position++,
+                    Url = result.Link?.ToString() ?? string.Empty,
+                    Title = result.Name ?? $"Result {position - 1}",
+                    Description = result.Value ?? string.Empty,
                     Source = Name
                 });
+                resultCount++;
             }
 
+            _logger.LogInformation("Google search completed successfully with {ResultCount} results", results.Count);
             return results;
         }
         catch (Exception ex)
@@ -82,46 +84,5 @@ public class GoogleSearchEngine : ISearchEngine
             _logger.LogError(ex, "Error performing Google search for query: {Query}", query);
             return new List<SearchResult>();
         }
-    }
-
-    private string BuildSearchUrl(string query, int numResults, string? lang, string? country)
-    {
-        // Build base URL with only required parameters first
-        var baseUrl = $"{GoogleSearchApiUrl}?key={_apiKey}&cx={_searchEngineId}&q={Uri.EscapeDataString(query)}";
-        
-        // Add number of results (max 10 for Custom Search API)
-        var clampedResults = Math.Max(1, Math.Min(numResults, 10));
-        baseUrl += $"&num={clampedResults}";
-        
-        // Only add optional parameters if they're meaningful
-        if (!string.IsNullOrEmpty(lang) && lang.ToLower() != "en")
-        {
-            baseUrl += $"&lr=lang_{lang.ToLower()}";
-        }
-        
-        if (!string.IsNullOrEmpty(country) && country.ToLower() != "us")
-        {
-            baseUrl += $"&gl={country.ToLower()}";
-        }
-
-        return baseUrl;
-    }
-
-    private class GoogleSearchResponse
-    {
-        [JsonPropertyName("items")]
-        public GoogleSearchItem[]? Items { get; set; }
-    }
-
-    private class GoogleSearchItem
-    {
-        [JsonPropertyName("title")]
-        public string? Title { get; set; }
-
-        [JsonPropertyName("link")]
-        public string? Link { get; set; }
-
-        [JsonPropertyName("snippet")]
-        public string? Snippet { get; set; }
     }
 }

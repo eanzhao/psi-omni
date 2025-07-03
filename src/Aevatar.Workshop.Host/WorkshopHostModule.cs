@@ -36,10 +36,9 @@ public class WorkshopHostModule : AbpModule
         context.Services.AddSingleton<IWebContentFetcher, WebContentFetcher>();
         
         // Register all search engines
-        context.Services.AddHttpClient<GoogleSearchEngine>();
+        context.Services.AddSingleton<ISearchEngine, GoogleSearchEngine>(); // GoogleSearchEngine now uses built-in GoogleTextSearch
         context.Services.AddHttpClient<DuckDuckGoSearchEngine>();
         context.Services.AddHttpClient<BingSearchEngine>();
-        context.Services.AddSingleton<ISearchEngine, GoogleSearchEngine>();
         context.Services.AddSingleton<ISearchEngine, DuckDuckGoSearchEngine>();
         context.Services.AddSingleton<ISearchEngine, BingSearchEngine>();
         
