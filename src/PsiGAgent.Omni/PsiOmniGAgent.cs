@@ -85,7 +85,7 @@ public partial class
 
     private const string IntrospectorSystemPrompt = """
                                                     You are an agent manager that understands the capabilities of the agents.
-  
+
                                                     ## Task
                                                     - You are trying to understand the capabilities of an agent that works as an orchestrator and delegates its agent.
                                                     - Derive the capabilities of the agent from the capabilities of the child agents.
@@ -325,6 +325,17 @@ public partial class
                 {
                     state.ChildAgents.TryAdd(newAgent.AgentId, newAgent);
                 }
+
+                var newAgentIds = payload.NewAgents.Select(x => x.AgentId);
+
+                ScheduleTask(async () =>
+                {
+                    foreach (var newAgent in newAgentIds)
+                    {
+                        var child = GrainFactory.GetGrain<IGAgent>(GrainId.Parse(newAgent));
+                        await RegisterAsync(child);
+                    }
+                });
 
                 break;
             case UpdateChildEvent payload:
