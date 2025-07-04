@@ -93,14 +93,6 @@ public class Program
                 // Pretty print the result
                 Console.WriteLine("📋 Result:");
                 Console.WriteLine(result);
-                
-                // Test QuickSearch as well
-                Console.WriteLine("\n🔍 Testing QuickSearch for same query...");
-                var quickResult = await webSearchPlugin.QuickSearchAsync(query);
-                Console.WriteLine("✅ QuickSearch completed");
-                Console.WriteLine($"📄 Quick result length: {quickResult.Length} characters");
-                Console.WriteLine("📋 Quick Result:");
-                Console.WriteLine(quickResult);
             }
             catch (Exception ex)
             {

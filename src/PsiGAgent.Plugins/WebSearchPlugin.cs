@@ -69,45 +69,6 @@ public class WebSearchPlugin
     }
 
     /// <summary>
-    /// Perform a quick web search and return a concise summary of the top results
-    /// </summary>
-    /// <param name="query">The search query</param>
-    /// <returns>Formatted string with top search results</returns>
-    [KernelFunction("QuickSearch")]
-    [Description("Perform a quick web search and return a concise summary of the top results")]
-    public async Task<string> QuickSearchAsync(
-        [Description("The search query")] string query)
-    {
-        try
-        {
-            _logger.LogInformation("Performing quick web search for query: {Query}", query);
-            
-            var searchResponse = await _webSearchService.ExecuteAsync(query, numResults: 5);
-
-            if (!searchResponse.Success)
-            {
-                return $"Search failed: {searchResponse.Error ?? "Unknown error"}";
-            }
-
-            if (!searchResponse.Results.Any())
-            {
-                return "No search results found.";
-            }
-
-            // Return a concise summary
-            var summary = string.Join("\n\n", searchResponse.Results.Take(3).Select(r =>
-                $"**{r.Title}**\n{r.Description}\nSource: {r.Source} ({r.Url})"));
-
-            return $"Search results for '{query}':\n\n{summary}";
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in quick web search for query: {Query}", query);
-            return $"Search error: {ex.Message}";
-        }
-    }
-
-    /// <summary>
     /// Fetch and process content from a specific webpage URL
     /// </summary>
     /// <param name="url">The URL to fetch content from</param>
