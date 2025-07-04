@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the **Aevatar Workshop** - a demonstration project showcasing the **Psi Omni Agent** system built on the Aevatar framework. The system demonstrates multi-agent orchestration using Orleans for distributed computing and Semantic Kernel for AI capabilities.
 
+### References
+- **Semantic Kernel**: https://github.com/microsoft/semantic-kernel - Microsoft's AI orchestration SDK for building AI agents
+- **OpenManus**: https://github.com/FoundationAgents/OpenManus - Reference implementation for multi-agent systems
+
 ### Key Components
 
 - **PsiOmniGAgent**: The core multi-agent system that can operate in ORCHESTRATOR or SPECIALIZED modes
