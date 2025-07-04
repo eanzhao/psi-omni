@@ -30,7 +30,7 @@ public partial class PsiOmniGAgent
             {
                 return message.Role == "tool" &&
                        message.Metadata.TryGetValue("FunctionName", out var funcNameObject) &&
-                       funcNameObject is string funcName && funcName == "create_and_call_agent" &&
+                       funcNameObject is string funcName && funcName == "call_new_agent" &&
                        message.Content.IndexOf('{') >= 0;
             }
 
