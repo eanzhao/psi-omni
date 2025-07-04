@@ -204,12 +204,11 @@ class Program
             var state = (PsiOmniGAgentState)await psi.GetStateAsync();
             var redactedState = RedactModelConfiguration(state);
             result.Add((redactedState, depth, agentId.ToString()));
-            if (state.ChildAgents != null && state.ChildAgents.Count > 0)
+            if (state.Children != null && state.Children.Count > 0)
             {
-                foreach (var (childId, child) in state.ChildAgents)
+                foreach (var childId in state.Children)
                 {
-                    var childStates =
-                        await GetAgentStatesRecursive(gAgentFactory, GrainId.Parse(childId), visited, depth + 1);
+                    var childStates = await GetAgentStatesRecursive(gAgentFactory, childId, visited, depth + 1);
                     result.AddRange(childStates);
                 }
             }
