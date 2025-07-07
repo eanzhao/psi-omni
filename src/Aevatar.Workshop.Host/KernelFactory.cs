@@ -28,9 +28,27 @@ public class KernelFactory : IKernelFactory
         }
         else
         {
-            kernelBuilder.AddOpenAIChatCompletion(
-                configuration.Model.ModelId,
-                configuration.Model.ApiKey);
+            // Check if we have a custom base URL (e.g., for DeepSeek or other OpenAI-compatible APIs)
+            if (!string.IsNullOrEmpty(configuration.Model.BaseUrl))
+            {
+                // Use OpenAI client with custom base URL
+                var httpClient = new System.Net.Http.HttpClient
+                {
+                    BaseAddress = new Uri(configuration.Model.BaseUrl)
+                };
+                
+                kernelBuilder.AddOpenAIChatCompletion(
+                    configuration.Model.ModelId,
+                    configuration.Model.ApiKey,
+                    httpClient: httpClient);
+            }
+            else
+            {
+                // Standard OpenAI
+                kernelBuilder.AddOpenAIChatCompletion(
+                    configuration.Model.ModelId,
+                    configuration.Model.ApiKey);
+            }
         }
 
 
