@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
-using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AIGAgent.Agent;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -13,7 +13,7 @@ namespace PsiGAgent.Omni;
 
 [GAgent("omni", "psi")]
 public partial class
-    PsiOmniGAgent : GAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>
+    PsiOmniGAgent : AIGAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>
 {
     private static readonly Dictionary<RealizationStatus, string> SystemPrompts =
         new Dictionary<RealizationStatus, string>()
@@ -245,7 +245,7 @@ public partial class
         });
     }
 
-    protected override void GAgentTransitionState(
+    protected override void AIGAgentTransitionState(
         PsiOmniGAgentState state,
         StateLogEventBase<PsiOmniGAgentStateLogEvent> @event
     )

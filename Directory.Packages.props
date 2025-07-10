@@ -17,6 +17,7 @@
     <PackageVersion Include="Aevatar.GAgents.Basic" Version="$(AevatarGAgentVersion)" />
     <PackageVersion Include="Aevatar.GAgents.Router" Version="$(AevatarGAgentVersion)" />
     <PackageVersion Include="Aevatar.GAgents.AI.Abstractions" Version="$(AevatarGAgentVersion)" />
+    <PackageVersion Include="Aevatar.GAgents.AIGAgent" Version="$(AevatarGAgentVersion)" />
     <PackageVersion Include="Microsoft.SemanticKernel.Abstractions" Version="$(SkVersion)" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="$(SkVersion)" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="$(SkVersion)" />

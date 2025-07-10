@@ -1,4 +1,5 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AIGAgent.State;
 using PsiGAgent.Common;
 using PsiGAgent.Common.Models;
 
@@ -13,7 +14,7 @@ public enum RealizationStatus
 
 [Serializable]
 [GenerateSerializer]
-public class PsiOmniGAgentState : StateBase
+public class PsiOmniGAgentState : AIGAgentStateBase
 {
     [Id(0)] public int Depth { get; set; } = 0;
     [Id(1)] public string AgentId { get; set; } = string.Empty;

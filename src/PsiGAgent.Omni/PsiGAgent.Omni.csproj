@@ -11,6 +11,7 @@
         <PackageReference Include="Aevatar.Core.Abstractions" />
         <PackageReference Include="Aevatar.Core" />
         <PackageReference Include="Aevatar.EventSourcing.Core" />
+        <PackageReference Include="Aevatar.GAgents.AIGAgent" />
         <PackageReference Include="YamlDotNet" />
     </ItemGroup>
 
